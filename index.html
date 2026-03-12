@@ -248,12 +248,17 @@
   /* ── MOBILE ── */
   @media (max-width: 600px) {
     body {
-      padding: 28px 14px 48px;
+      padding: 24px 12px 48px;
     }
 
     h2 {
-      font-size: 18px;
-      margin-bottom: 24px;
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+
+    /* Quote */
+    body > p:first-of-type {
+      font-size: 11px;
     }
 
     /* Before/after grid → stack vertically */
@@ -263,18 +268,15 @@
 
     /* Step cards — shrink left column */
     .step {
-      grid-template-columns: 60px 1fr;
+      grid-template-columns: 54px 1fr;
     }
 
-    .step-emoji { font-size: 20px; }
-
-    .step-role { font-size: 7.5px; }
-
-    .step-body { padding: 12px 12px; }
-
-    .step-title { font-size: 14px; }
-
-    .step-desc { font-size: 11.5px; }
+    .step-emoji { font-size: 18px; }
+    .step-role { font-size: 7px; }
+    .step-body { padding: 10px 10px; }
+    .step-title { font-size: 13px; }
+    .step-desc { font-size: 11px; }
+    .step-num { font-size: 9px; }
 
     /* Parallel steps → stack vertically */
     .parallel {
@@ -291,7 +293,7 @@
       color: #b45309;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin: 4px 0 8px;
+      margin: 6px 0;
     }
 
     /* Group wrapper */
@@ -307,9 +309,51 @@
 
     /* Monospace template box */
     .template-box {
-      font-size: 10.5px !important;
-      padding: 10px 10px !important;
+      font-size: 10px !important;
+      padding: 8px 10px !important;
+      line-height: 1.8 !important;
+      word-break: break-word;
     }
+
+    /* Callout boxes inside steps */
+    .step-body > div[style*="background:#dbeafe"],
+    .step-body > div[style*="background:#dcfce7"],
+    .step-body > div[style*="background:#fef3c7"] {
+      font-size: 11px !important;
+      padding: 7px 10px !important;
+    }
+
+    /* Legend pills — wrap and shrink */
+    .legend {
+      gap: 6px;
+    }
+
+    .legend-item {
+      font-size: 9px !important;
+      padding: 4px 10px !important;
+    }
+
+    /* THE PROCESS divider */
+    .flow-divider {
+      font-size: 9px;
+    }
+
+    /* GitHub button */
+    .github-btn {
+      font-size: 10px !important;
+      padding: 8px 14px !important;
+    }
+
+    /* Vote footer */
+    body > div:last-of-type {
+      font-size: 9px;
+    }
+
+    /* Left border accent per role for mobile orientation */
+    .step.treasurer { border-left: 4px solid #93c5fd; }
+    .step.liaison   { border-left: 4px solid #86efac; }
+    .step.processor { border-left: 4px solid #fcd34d; }
+    .step.office    { border-left: 4px solid #f9a8d4; }
   }
 </style>
 </head>
@@ -391,7 +435,7 @@
 
 </div>
 
-<div style="max-width:760px;margin:0 auto 20px;display:flex;align-items:center;gap:12px;">
+<div class="flow-divider" style="max-width:760px;margin:0 auto 20px;display:flex;align-items:center;gap:12px;">
   <div style="flex:1;height:1.5px;background:#d4cfc8;"></div>
   <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;">The Process</span>
   <div style="flex:1;height:1.5px;background:#d4cfc8;"></div>
@@ -409,8 +453,8 @@
       <div class="step-title">CCA Treasurer sends claim details to their Liaison</div>
       <div class="step-desc">Telegram the following to your Liaison:</div>
       <div class="template-box" style="margin-top:8px;background:#f0ede8;border:1.5px solid #d4cfc8;border-radius:6px;padding:12px 16px;font-size:12px;line-height:2;font-family:'DM Mono',monospace;color:#444;">
-        <div>Portfolio: <span style="color:#bbb;">_______________</span></div>
-        <div>CCA: <span style="color:#bbb;">_______________</span></div>
+        <div>Portfolio: <span style="color:#bbb;">_______________</span> <span style="color:#ccc;font-size:10px;font-style:italic;">(skip if your Liaison already knows)</span></div>
+        <div>CCA: <span style="color:#bbb;">_______________</span> <span style="color:#ccc;font-size:10px;font-style:italic;">(skip if your Liaison already knows)</span></div>
         <div>Claim Description: <span style="color:#bbb;">_______________</span></div>
         <div>Emails of others involved in the claim: <span style="color:#bbb;">_______________</span></div>
         <div>Remarks: <span style="color:#bbb;">_______________</span></div>
@@ -555,15 +599,15 @@
 
 <!-- GITHUB LINK -->
 <div style="max-width:760px;margin:48px auto 0;padding-top:32px;border-top:1.5px solid #d4cfc8;text-align:center;">
-  <a href="https://github.com/ry-koh/Automated-Finance-Claims-Management-System" target="_blank" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#1a1a1a;color:#f0ede8;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;box-shadow:3px 3px 0 #555;">
+  <a href="https://github.com/ry-koh/Automated-Finance-Claims-Management-System" target="_blank" class="github-btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#1a1a1a;color:#f0ede8;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;box-shadow:3px 3px 0 #555;">
     <svg height="18" width="18" viewBox="0 0 16 16" fill="#f0ede8" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     View on GitHub
   </a>
   <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:9px;color:#bbb;letter-spacing:0.06em;">ry-koh/Automated-Finance-Claims-Management-System</div>
 </div>
 
-<div style="text-align:center;margin-top:24px;font-family:'DM Mono',monospace;font-size:10px;color:#bbb;letter-spacing:0.08em;">
-  built by <span style="color:#1a1a1a;font-weight:500;">ryan koh</span> &nbsp;·&nbsp; vote ryan koh for finance director
+<div style="text-align:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:10px;color:#bbb;letter-spacing:0.08em;">
+  built by <span style="color:#1a1a1a;font-weight:500;">Ryan Koh</span> &nbsp;·&nbsp; vote Ryan Koh for finance d
 </div>
 
 </body>
