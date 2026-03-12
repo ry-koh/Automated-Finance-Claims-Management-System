@@ -224,9 +224,9 @@
   /* ── LEGEND ── */
   .legend {
     max-width: 760px;
-    margin: 40px auto 0;
+    margin: 0 auto 40px;
     display: flex;
-    gap: 20px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
   }
@@ -235,15 +235,14 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 11px;
-    color: #888;
-  }
-
-  .legend-dot {
-    width: 12px; height: 12px;
-    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: #1a1a1a;
     border: 1.5px solid #1a1a1a;
-    flex-shrink: 0;
+    border-radius: 20px;
+    padding: 5px 14px;
+    box-shadow: 2px 2px 0 #1a1a1a;
   }
 
   /* ── MOBILE ── */
@@ -282,6 +281,19 @@
       grid-template-columns: 1fr !important;
     }
 
+    /* On mobile, remind users parallel steps happen simultaneously */
+    .parallel .step + .step::before {
+      content: "⚡ at the same time";
+      display: block;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: #b45309;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 4px 0 8px;
+    }
+
     /* Group wrapper */
     .group-wrapper {
       padding: 16px 8px 12px;
@@ -304,8 +316,17 @@
 <body>
 
 <h1>Raffles Hall Finance</h1>
-<h2>Proposed New Claims Process</h2>
-<p style="text-align:center;font-size:13.5px;color:#555;max-width:560px;margin:0 auto 32px;line-height:1.7;">The proposed system splits the Finance Team into <strong>Liaisons</strong> and <strong>Form Processors</strong>. Errors are caught earlier, and every document is generated automatically — no manual form-filling required.</p>
+<h2 style="margin-bottom:10px;">Proposed New Claims Process</h2>
+<p style="text-align:center;font-size:12px;color:#aaa;max-width:500px;margin:0 auto 16px;line-height:1.8;font-style:italic;font-family:'DM Sans',sans-serif;">Having been in Finance CCAs for the past 2 years, the manual process frustrated me, so I automated it.</p>
+
+<!-- LEGEND -->
+<p style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;margin-bottom:10px;">Parties Involved</p>
+<div class="legend">
+  <div class="legend-item" style="background:#dbeafe;">💰 CCA Treasurer</div>
+  <div class="legend-item" style="background:#dcfce7;">🔗 Liaison <span style="opacity:0.5;font-size:8px;">(Finance Team)</span></div>
+  <div class="legend-item" style="background:#fef3c7;">⚙️ Form Processor <span style="opacity:0.5;font-size:8px;">(Finance Team)</span></div>
+  <div class="legend-item" style="background:#fce7f3;">🏛️ Finance Office</div>
+</div>
 
 <!-- BEFORE / AFTER -->
 <div class="before-after" style="max-width:760px;margin:0 auto 48px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -313,26 +334,26 @@
   <!-- BEFORE -->
   <div style="background:#fff;border:2px solid #1a1a1a;border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 #1a1a1a;">
     <div style="background:#1a1a1a;color:#f0ede8;padding:10px 16px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;">
-      ✗ &nbsp;Before — Manual Process
+      ✗ &nbsp;Current Process — Manual
     </div>
-    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+    <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#e53e3e;font-weight:700;flex-shrink:0;">✗</span>
         CCA Treasurer writes their own email — often with errors, inconsistent formatting
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#e53e3e;font-weight:700;flex-shrink:0;">✗</span>
         Limited to 5 receipts per email — multiple emails needed for one event
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#e53e3e;font-weight:700;flex-shrink:0;">✗</span>
         Finance team manually parses every email and attachment to extract claim data
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#e53e3e;font-weight:700;flex-shrink:0;">✗</span>
         LOA, Summary, and RFP forms all filled in manually
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#e53e3e;font-weight:700;flex-shrink:0;">✗</span>
         Errors only caught at LOA stage or after submission — causing delays and requiring the entire process to restart from Step 1
       </div>
@@ -342,26 +363,26 @@
   <!-- AFTER -->
   <div style="background:#fff;border:2px solid #1a1a1a;border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 #1a1a1a;">
     <div style="background:#15803d;color:#fff;padding:10px 16px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;">
-      ✓ &nbsp;Now — Automated System
+      ✓ &nbsp;Proposed System — Automated
     </div>
-    <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+    <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#15803d;font-weight:700;flex-shrink:0;">✓</span>
         Treasurer just Telegrams details to their Liaison — no email writing needed
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#15803d;font-weight:700;flex-shrink:0;">✓</span>
         No receipt limit — send everything for an entire event at once
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#15803d;font-weight:700;flex-shrink:0;">✓</span>
         Liaison catches errors early before submission — fewer back-and-forths later
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#15803d;font-weight:700;flex-shrink:0;">✓</span>
         LOA, Summary, and RFP auto-generated from the form — zero manual form filling
       </div>
-      <div style="font-size:12.5px;color:#555;line-height:1.6;display:flex;gap:10px;align-items:flex-start;">
+      <div style="font-size:11.5px;color:#555;line-height:1.5;display:flex;gap:10px;align-items:flex-start;">
         <span style="color:#15803d;font-weight:700;flex-shrink:0;">✓</span>
         Email to Treasurer auto-generated with exact wording — no room for mistakes
       </div>
@@ -370,6 +391,11 @@
 
 </div>
 
+<div style="max-width:760px;margin:0 auto 20px;display:flex;align-items:center;gap:12px;">
+  <div style="flex:1;height:1.5px;background:#d4cfc8;"></div>
+  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;">The Process</span>
+  <div style="flex:1;height:1.5px;background:#d4cfc8;"></div>
+</div>
 <div class="flow">
 
   <!-- STEP 1 -->
@@ -425,14 +451,16 @@
       </div>
       <div class="step-body">
         <div class="step-num">STEP 3</div>
-        <div class="step-title">Form Processor processes the submission</div>
-        <div class="step-desc">The form response is recorded in the system. The Form Processor then does two things at the same time:</div>
+        <div class="step-title">Form Processor reviews and processes the submission</div>
+        <div class="step-desc">The form response is recorded in the system. The Form Processor checks that all the details look correct before proceeding — catching any issues early before documents are generated or emails are sent.</div>
       </div>
     </div>
 
+    <div class="connector then"><span class="connector-label">all looks good →</span></div>
+
     <!-- PARALLEL -->
-    <div style="margin-top:16px;border:1.5px dashed #fcd34d;border-radius:10px;padding:16px 14px 14px;position:relative;background:rgba(254,243,199,0.3);">
-      <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">⚡ done at the same time</div>
+    <div style="margin-top:8px;border:1.5px dashed #fcd34d;border-radius:10px;padding:16px 14px 14px;position:relative;background:rgba(254,243,199,0.3);">
+      <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">⚡ Form Processor does both at the same time</div>
       <div class="parallel">
 
         <div class="step processor">
@@ -443,7 +471,7 @@
           <div class="step-body">
             <div class="step-num">STEP 4A</div>
             <div class="step-title">Sends an email to the CCA Treasurer</div>
-            <div class="step-desc">The email tells the CCA Treasurer exactly what to copy-paste and send to RH Finance Email (which is the Form Processor's inbox), including all attachments.</div>
+            <div class="step-desc">With a single click, the system auto-generates and sends the email — the To and CC fields are pre-filled from the form, and the body contains exactly what the Treasurer needs to copy-paste, with a reminder to attach all files. No manual writing involved.</div>
           </div>
         </div>
 
@@ -456,20 +484,21 @@
             <div class="step-num">STEP 4B</div>
             <div class="step-title">Claim documents are automatically generated</div>
             <div class="step-desc">The LOA, Summary, and RFP are all created automatically from the form data — no manual filling, no copy-pasting. Files are saved directly to Google Drive.</div>
+            <div style="margin-top:8px;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:6px;padding:7px 12px;font-size:11.5px;color:#b45309;line-height:1.6;">⏳ Waiting on the Treasurer's email (Step 5) and their screenshot before Step 6 can proceed.</div>
           </div>
         </div>
 
       </div>
     </div>
 
-    <!-- STEP 5 (outside group — treasurer acts) -->
-  </div><!-- end finance team -->
+    <!-- end finance team -->
+  </div>
 
   <div class="connector wait"><span class="connector-label">⏳ waiting for treasurer</span></div>
 
 
 
-  <!-- STEP 5 -->
+  <!-- STEP 7 -->
   <div class="step treasurer">
     <div class="step-who">
       <div class="step-emoji">💰</div>
@@ -489,9 +518,9 @@
 
   <!-- FINANCE TEAM GROUP 2 -->
   <div class="group-wrapper">
-    <div class="group-label">📋 Finance Team</div>
+    <div class="group-label">📋 Finance Team (after treasurer responds)</div>
 
-    <!-- STEP 6 -->
+    <!-- STEP 7 -->
     <div class="step processor">
       <div class="step-who">
         <div class="step-emoji">⚙️</div>
@@ -516,27 +545,25 @@
     <div class="step-body">
       <div class="step-num">STEP 7</div>
       <div class="step-title">PDF is submitted to the Finance Office</div>
-      <div class="step-desc">The compiled PDF is handed in. Once approved, the reimbursement is processed. ✓</div>
+      <div class="step-desc">The compiled PDF is handed in. Once approved, the reimbursement is processed.</div>
     </div>
   </div>
 
 </div>
 
-<!-- LEGEND -->
-<!-- LEGEND -->
-<div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#dbeafe;"></div>CCA Treasurer</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#dcfce7;"></div>Liaison</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;"></div>Form Processor</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#fce7f3;"></div>Finance Office</div>
-</div>
+
 
 <!-- GITHUB LINK -->
-<div style="max-width:760px;margin:32px auto 0;text-align:center;">
+<div style="max-width:760px;margin:48px auto 0;padding-top:32px;border-top:1.5px solid #d4cfc8;text-align:center;">
   <a href="https://github.com/ry-koh/Automated-Finance-Claims-Management-System" target="_blank" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#1a1a1a;color:#f0ede8;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;box-shadow:3px 3px 0 #555;">
     <svg height="18" width="18" viewBox="0 0 16 16" fill="#f0ede8" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     View on GitHub
   </a>
+  <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:9px;color:#bbb;letter-spacing:0.06em;">ry-koh/Automated-Finance-Claims-Management-System</div>
+</div>
+
+<div style="text-align:center;margin-top:24px;font-family:'DM Mono',monospace;font-size:10px;color:#bbb;letter-spacing:0.08em;">
+  built by <span style="color:#1a1a1a;font-weight:500;">ryan koh</span> &nbsp;·&nbsp; vote ryan koh for finance director
 </div>
 
 </body>
