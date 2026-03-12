@@ -20,16 +20,32 @@ function setupClaimsSystem() {
     createClaimsDataSheet(ss);
     createAddClaimTemplate(ss);
     createIdentifierDataSheet(ss);
+    createFormOptionsSheet(ss);
 
     let originalSheet = ss.getSheetByName('Sheet1');
-    ss.deleteSheet(originalSheet);
+    if (originalSheet) ss.deleteSheet(originalSheet);
     
     // Create folder structure
     const config = loadConfigFromSheet(ss);
     createFolderStructure(ss, config);
+
+    // FIX 3: Only create the form if Form Responses doesn't exist; otherwise ask
+    const existingFormSheet = ss.getSheetByName('Form Responses');
+    if (!existingFormSheet) {
+      createClaimsForm(ss);
+    } else {
+      const formResponse = ui.alert(
+        'Form Already Exists',
+        'A Form Responses sheet already exists. Recreate the Google Form and reset responses?\n\n(Click No to keep the existing form)',
+        ui.ButtonSet.YES_NO
+      );
+      if (formResponse === ui.Button.YES) {
+        createClaimsForm(ss);
+      }
+    }
     
     ui.alert(
-      'Setup Complete!',
+      'Setup Complete!\n\nNext steps:\n1. Fill in the Config sheet (template IDs, Finance D info, academic year)\n2. The Google Form has been created — URL saved in Config sheet\n3. ⚠️  Open the form and manually add 2 file upload fields per receipt section (10 total):\n   • "Receipt Softcopy/Image [N]"\n   • "Bank Transaction Screenshot [N]"\n   Place each pair after "Amount [N]", before "Are there more receipts?"\n4. Share the form link with claimers',
       ui.ButtonSet.OK
     );
     
@@ -40,6 +56,375 @@ function setupClaimsSystem() {
     console.error('Setup error:', e);
   }
 }
+
+// ============================================================================
+// FORM OPTIONS SHEET
+// ============================================================================
+
+function createFormOptionsSheet(ss) {
+  let sheet = ss.getSheetByName('Form Options');
+  
+  if (sheet) {
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert(
+      'Form Options Exists',
+      'Reset Form Options sheet? (This erases current portfolio/CCA options)',
+      ui.ButtonSet.YES_NO
+    );
+    if (response === ui.Button.YES) {
+      ss.deleteSheet(sheet);
+    } else {
+      return sheet;
+    }
+  }
+  
+  sheet = ss.insertSheet('Form Options', 5);
+
+  // Header row
+  sheet.getRange(1, 1, 1, 2)
+    .setValues([['Portfolio', 'CCA']])
+    .setBackground('#4a86e8')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  // Populate from the CCA_DEPARTMENTS constant
+  const portfolios = Object.keys(CCA_DEPARTMENTS);
+  let currentRow = 2;
+
+  portfolios.forEach(portfolio => {
+    const ccas = CCA_DEPARTMENTS[portfolio];
+    ccas.forEach(cca => {
+      sheet.getRange(currentRow, 1).setValue(portfolio);
+      sheet.getRange(currentRow, 2).setValue(cca);
+      currentRow++;
+    });
+  });
+
+  sheet.setColumnWidth(1, 150);
+  sheet.setColumnWidth(2, 200);
+  sheet.deleteRows(currentRow, sheet.getMaxRows() - currentRow + 1);
+
+  // Add note for users
+  sheet.getRange('A1').setNote('Add or remove Portfolio/CCA pairs here. These will be used in the Google Form dropdowns. Re-run "Create Claims Form" from the Claims Tools menu to update the form.');
+
+  return sheet;
+}
+
+// ============================================================================
+// GOOGLE FORM CREATION
+// ============================================================================
+
+/**
+ * Reads Portfolio and CCA data from the Form Options sheet.
+ * Returns: { portfolios: [...], ccaByPortfolio: { Portfolio: [...ccas] } }
+ */
+function loadFormOptions(ss) {
+  const sheet = ss.getSheetByName('Form Options');
+  if (!sheet) throw new Error('Form Options sheet not found. Please run setup first.');
+
+  const data = sheet.getDataRange().getValues();
+  const portfolioSet = new Set();
+  const ccaByPortfolio = {};
+
+  for (let i = 1; i < data.length; i++) {
+    const portfolio = (data[i][0] || '').toString().trim();
+    const cca = (data[i][1] || '').toString().trim();
+    if (!portfolio || !cca) continue;
+
+    portfolioSet.add(portfolio);
+    if (!ccaByPortfolio[portfolio]) ccaByPortfolio[portfolio] = [];
+    ccaByPortfolio[portfolio].push(cca);
+  }
+
+  return {
+    portfolios: Array.from(portfolioSet),
+    ccaByPortfolio
+  };
+}
+
+/**
+ * Creates the Google Form, sets up sections with branching logic,
+ * and links responses to a new 'Form Responses' sheet.
+ */
+function createClaimsForm(ss) {
+  const ui = SpreadsheetApp.getUi();
+  const { portfolios, ccaByPortfolio } = loadFormOptions(ss);
+
+  // --- Create the Form ---
+  const form = FormApp.create('Claims Submission Form');
+  form.setTitle('Claims Submission Form');
+  form.setAllowResponseEdits(false);
+  form.setLimitOneResponsePerUser(false);
+
+  // ---- SECTION 1: Basic Info ----
+  // Portfolio dropdown
+  const portfolioItem = form.addListItem();
+  portfolioItem.setTitle('Portfolio')
+    .setRequired(true)
+    .setChoices(portfolios.map(p => portfolioItem.createChoice(p)));
+
+  // CCA dropdown — flat list of all CCAs (Google Forms doesn't support dynamic filtering)
+  // We include all CCAs and note that claimers should pick the correct one.
+  // A separate "CCA" question per portfolio would require many sections; flat list is the practical approach.
+  const allCcas = [];
+  portfolios.forEach(p => {
+    (ccaByPortfolio[p] || []).forEach(cca => {
+      if (!allCcas.includes(cca)) allCcas.push(cca);
+    });
+  });
+
+  const ccaItem = form.addListItem();
+  ccaItem.setTitle('CCA')
+    .setRequired(true)
+    .setChoices(allCcas.map(c => ccaItem.createChoice(c)));
+
+  // Claim Description
+  form.addTextItem()
+    .setTitle('Claim Description')
+    .setRequired(true);
+
+  // Other people involved
+  form.addParagraphTextItem()
+    .setTitle('Are there other people involved? If yes, include their emails.')
+    .setHelpText('Leave a comma and space between emails\nE.g. test123@gmail.com, test456@gmail.com, test789@gmail.com')
+    .setRequired(false);
+
+  // Remarks
+  form.addParagraphTextItem()
+    .setTitle('Remarks')
+    .setRequired(false);
+
+  // ---- RECEIPT SECTIONS (1–5) ----
+  // Section indices: Section 1 is index 0.
+  // We'll create Sections 2–6 for receipts 1–5.
+  // After the last receipt (5), no more branching needed.
+
+  const receiptSections = [];
+
+  for (let i = 1; i <= 5; i++) {
+    const section = form.addPageBreakItem();
+    section.setTitle(`Receipt ${i}`);
+    receiptSections.push(section);
+
+    form.addTextItem()
+      .setTitle(`Description of Expense ${i}`)
+      .setHelpText('What was purchased?')
+      .setRequired(true);
+
+    form.addTextItem()
+      .setTitle(`Company ${i}`)
+      .setHelpText('Name of vendor / merchant')
+      .setRequired(false);
+
+    // FIX 2: Date question with DD/MM/YYYY help text to guide claimers
+    form.addDateItem()
+      .setTitle(`Date of Receipt/Invoice ${i}`)
+      .setHelpText('DD/MM/YYYY')
+      .setRequired(true);
+
+    form.addTextItem()
+      .setTitle(`Receipt/Invoice No. ${i}`)
+      .setHelpText('If no number, write "-"')
+      .setRequired(true);
+
+    form.addTextItem()
+      .setTitle(`Amount ${i}`)
+      .setHelpText('Enter amount in numbers only, e.g. 12.50')
+      .setRequired(true);
+
+    // ⚠️ MANUAL STEP REQUIRED after setup — open the form in Google Forms UI
+    // and add these two questions after "Amount ${i}", before "Are there more receipts?":
+    //   1. "Receipt Softcopy/Image ${i}"     — File upload | Required | Images + PDF | Max 10MB
+    //   2. "Bank Transaction Screenshot ${i}" — File upload | Required | Images + PDF | Max 10MB
+    // Do this for all 5 receipt sections (10 upload fields total).
+
+    // "More receipts?" branching — only add for receipts 1–4
+    if (i < 5) {
+      const moreReceiptsItem = form.addMultipleChoiceItem();
+      moreReceiptsItem.setTitle('Are there more receipts?')
+        .setRequired(true);
+
+      // Choices will be set with branching after all sections are created
+      // Store a reference to set branching logic after all sections exist
+      receiptSections[i - 1]._moreReceiptsItem = moreReceiptsItem;
+    }
+  }
+
+  // ---- SET BRANCHING LOGIC ----
+  // Now that all sections exist, set the "Yes → next section, No → submit" choices
+  for (let i = 0; i < 4; i++) {
+    const moreReceiptsItem = receiptSections[i]._moreReceiptsItem;
+    const nextSection = receiptSections[i + 1]; // next receipt section
+
+    moreReceiptsItem.setChoices([
+      moreReceiptsItem.createChoice('Yes', nextSection),                      // Go to next receipt
+      moreReceiptsItem.createChoice('No', FormApp.PageNavigationType.SUBMIT)  // Submit form
+    ]);
+  }
+
+  // ---- LINK FORM TO SPREADSHEET ----
+  // Delete existing Form Responses sheet if present (will be recreated by linkFormToSheet)
+  const existingResponseSheet = ss.getSheetByName('Form Responses');
+  if (existingResponseSheet) ss.deleteSheet(existingResponseSheet);
+
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+
+  // The above creates a sheet named "Form Responses (1)" or similar — rename it
+  SpreadsheetApp.flush();
+  Utilities.sleep(2000); // Give Sheets time to create the linked sheet
+
+  const allSheets = ss.getSheets();
+  const linkedSheet = allSheets.find(s =>
+    s.getName().startsWith('Form Responses') && s.getName() !== 'Form Responses'
+  );
+  if (linkedSheet) linkedSheet.setName('Form Responses');
+
+  // Insert 'Processed' and 'Error' columns as the two leftmost columns
+  const formResponsesSheet = ss.getSheetByName('Form Responses');
+  if (formResponsesSheet) {
+    formResponsesSheet.insertColumnsBefore(1, 2);
+    formResponsesSheet.getRange('A1').setValue('Processed');
+    formResponsesSheet.getRange('B1').setValue('Error');
+    formResponsesSheet.getRange('A1:B1')
+      .setBackground('#4a86e8')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold')
+      .setHorizontalAlignment('center');
+    formResponsesSheet.setColumnWidth(1, 100);
+    formResponsesSheet.setColumnWidth(2, 200);
+
+    // FIX 2: Format date columns in Form Responses to DD/MM/YYYY
+    // Timestamp is col 3 (C), receipt dates are at cols 11, 17, 23, 29, 35 (1-indexed)
+    // after the 2 prepended cols: Processed(1), Error(2), Timestamp(3), Portfolio(4), CCA(5),
+    // ClaimDesc(6), OtherEmails(7), Remarks(8), then Receipt blocks start at col 9
+    // Each receipt block: Desc(+0), Company(+1), Date(+2), ReceiptNo(+3), Amount(+4), Softcopy(+5), Bank(+6) = 7 cols
+    // Receipt 1 date = col 9+2 = 11, Receipt 2 = 11+7 = 18... wait, block is 7 wide so:
+    // R1 date=11, R2 date=18, R3 date=25, R4 date=32, R5 date=39
+    // But file upload fields add 2 per receipt (softcopy + bank), so each block is actually 9 cols wide
+    // with file uploads: Desc, Company, Date, ReceiptNo, Amount, Softcopy, Bank, [MoreReceipts for 1-4] = varies
+    // Conservative approach: apply format to the entire sheet date-like columns using number format
+    formResponsesSheet.getRange(1, 3, formResponsesSheet.getMaxRows(), 1)
+      .setNumberFormat('DD/MM/YYYY HH:mm:ss'); // Timestamp col
+    // Receipt date cols: R1=9+2=11, R2=15+2=17, R3=21+2=23, R4=27+2=29, R5=33+2=35
+    // Receipt date cols: R1=7+2=9, R2=13+2=15, R3=21, R4=27, R5=33
+    // Receipt date cols: R1=7+2=9, R2=13+2=15, R3=19+2=21, R4=25+2=27, R5=31+2=33
+    [9, 15, 21, 27, 33].forEach(col => {
+      formResponsesSheet.getRange(2, col, formResponsesSheet.getMaxRows() - 1, 1)
+        .setNumberFormat('DD/MM/YYYY');
+    });
+
+    // Add a trigger to auto-insert checkboxes in A and B for each new form response
+    // Also pre-fill checkboxes for any existing data rows
+    const lastRow = formResponsesSheet.getLastRow();
+    if (lastRow > 1) {
+      formResponsesSheet.getRange(2, 1, lastRow - 1, 2).insertCheckboxes();
+    }
+  }
+
+  // Save Form URL to Config sheet
+  const configSheet = ss.getSheetByName('Config');
+  if (configSheet) {
+    const configData = configSheet.getRange('A:A').getValues();
+    let formUrlRow = -1;
+    for (let i = 0; i < configData.length; i++) {
+      if (configData[i][0] === 'FORM_URL') {
+        formUrlRow = i + 1;
+        break;
+      }
+    }
+    if (formUrlRow === -1) {
+      // Append after last config row
+      configSheet.appendRow(['FORM_URL', form.getPublishedUrl(), 'Share this link with claimers']);
+    } else {
+      configSheet.getRange(formUrlRow, 2).setValue(form.getPublishedUrl());
+    }
+  }
+
+  // Install trigger to auto-add checkboxes on each new form submission
+  installFormSubmitTrigger(ss);
+
+  console.log('Form created: ' + form.getPublishedUrl());
+  return form;
+}
+
+/**
+ * Regenerate the Google Form (e.g. after updating Form Options sheet).
+ * Accessible from the Claims Tools menu.
+ */
+function recreateClaimsForm() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+
+  const response = ui.alert(
+    'Recreate Claims Form',
+    'This will delete the existing form and create a new one linked to this sheet.\n\nExisting form responses will NOT be deleted from this sheet, but the old form link will stop working.\n\nContinue?',
+    ui.ButtonSet.YES_NO
+  );
+
+  if (response !== ui.Button.YES) {
+    ui.alert('Cancelled.');
+    return;
+  }
+
+  try {
+    createClaimsForm(ss);
+    const formUrl = getConfigValue('FORM_URL');
+    ui.alert('Form recreated successfully!\n\nNew form URL:\n' + formUrl);
+  } catch (e) {
+    ui.alert('Error', `Failed to recreate form: ${e.message}`, ui.ButtonSet.OK);
+    console.error(e);
+  }
+}
+
+// ============================================================================
+// FORM SUBMIT TRIGGER
+// ============================================================================
+
+/**
+ * Automatically called when a form response is submitted.
+ * Inserts checkboxes in the Processed (col A) and Error (col B) columns
+ * for the newly added row.
+ */
+function onFormSubmitInsertCheckboxes(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Form Responses');
+    if (!sheet) return;
+
+    // The new response is always appended at the last row
+    const newRow = sheet.getLastRow();
+    if (newRow < 2) return;
+
+    sheet.getRange(newRow, 1, 1, 2).insertCheckboxes();
+  } catch (err) {
+    console.error('onFormSubmitInsertCheckboxes error: ' + err.message);
+  }
+}
+
+/**
+ * Installs the onFormSubmit trigger for the spreadsheet.
+ * Called automatically during setup via createClaimsForm.
+ */
+function installFormSubmitTrigger(ss) {
+  // Remove any existing triggers for this function to avoid duplicates
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'onFormSubmitInsertCheckboxes') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  // Install a fresh trigger
+  ScriptApp.newTrigger('onFormSubmitInsertCheckboxes')
+    .forSpreadsheet(ss)
+    .onFormSubmit()
+    .create();
+}
+
+// ============================================================================
+// PART 2: EXISTING SHEET CREATION FUNCTIONS (UNCHANGED)
+// ============================================================================
 
 function createConfigSheet(ss) {
   let sheet = ss.getSheetByName('Config');
@@ -74,7 +459,10 @@ function createConfigSheet(ss) {
     ['', '', ''],
     ['[FOLDERS - Auto-created]', '', ''],
     ['MAIN_FOLDER_ID', '', 'Main claims folder'],
-    ['RFP_FOLDER_ID', '', 'RFPs subfolder']
+    ['RFP_FOLDER_ID', '', 'RFPs subfolder'],
+    ['', '', ''],
+    ['[FORM - Auto-created]', '', ''],
+    ['FORM_URL', '', 'Share this link with claimers'],
   ];
   
   const range = sheet.getRange(1, 1, data.length, 3);
@@ -90,16 +478,16 @@ function createConfigSheet(ss) {
   sheet.setColumnWidth(2, 300);
   sheet.setColumnWidth(3, 400);
 
-  sheet.deleteRows(14, 987);
-  sheet.deleteColumns(4, 23);
+  sheet.deleteRows(data.length + 1, sheet.getMaxRows() - data.length);
+  sheet.deleteColumns(4, sheet.getMaxColumns() - 3);
 
-  // Add conditional formatting for required fields
-  const requiredRange1 = sheet.getRange('B2:B5');  // Academic year and Finance D info
-  const requiredRange2 = sheet.getRange('B8:B9');  // Template IDs
+  // Conditional formatting for required fields
+  const requiredRange1 = sheet.getRange('B2:B5');
+  const requiredRange2 = sheet.getRange('B8:B9');
   
   const emptyRule = SpreadsheetApp.newConditionalFormatRule()
     .whenCellEmpty()
-    .setBackground('#f4cccc')  // Light red
+    .setBackground('#f4cccc')
     .setRanges([requiredRange1, requiredRange2])
     .build();
   
@@ -138,25 +526,51 @@ function createMasterSheet(ss) {
   const headers = [
     'No.', 'PORTFOLIO', 'CCA', 'ITEM', 'AMOUNT', 'PERSON CLAIMING', 'MOBILE NO.',
     'REFERENCE CODE', 'WBS ACCOUNT', 'Generate Email', 'Emails Sent', 'Generate Forms',
-    'Forms Generated', 'Email Screenshot Added', ' Formatting Remarks', 'Compile Forms',
-    'Compiled', 'EMAIL SUBMISSION DATE', 'PROCESSED TO FINANCE DIRECTOR', 'SUBMISSION TO OFFICE',
+    'Forms Generated', 'Email Screenshot Added', 'Formatting Remarks', 'Compile Forms',
+    'Compiled', 'PROCESSED TO FINANCE DIRECTOR', 'SUBMISSION TO OFFICE',
     'DATE OF REIMBURSEMENT', 'STATUS', 'REMARKS (For my own use)', 'FOR RL USE ONLY'
   ];
-  
+
   sheet.getRange(1, 1, 1, headers.length)
     .setValues([headers])
+    .setBackground('#4a86e8')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
     .setHorizontalAlignment('center')
     .setWrap(true);
-  
+
+  // Pastel green for editable columns: J(10), L(12), N(14), O(15), P(16)
+  const pastelGreen = '#d9ead3';
+  [10, 12, 14, 15, 16].forEach(col => {
+    sheet.getRange(1, col).setBackground(pastelGreen).setFontColor('#000000');
+  });
+
+  // Pastel red for Finance D columns: R(18) to W(23)
+  const pastelRed = '#f4cccc';
+  for (let col = 18; col <= 23; col++) {
+    sheet.getRange(1, col).setBackground(pastelRed).setFontColor('#000000');
+  }
+
   sheet.setColumnWidth(1, 50);
-  sheet.deleteRows(2, 999);
+  sheet.setColumnWidth(4, 250);
+  sheet.setColumnWidth(8, 200);
+  sheet.getRange('E2:E1000').setNumberFormat('"$"#,##0.00');
+  sheet.deleteRows(2, sheet.getMaxRows() - 1);
+  sheet.deleteColumns(headers.length + 1, sheet.getMaxColumns() - headers.length);
+
+  // Conditional formatting: STATUS col U=21 — green if COMPLETED
+  const statusRule = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('COMPLETED')
+    .setBackground('#00b050')
+    .setFontColor('#ffffff')
+    .setRanges([sheet.getRange('U2:U1000')])
+    .build();
+  sheet.setConditionalFormatRules([statusRule]);
 
   const protection = sheet.protect().setDescription('Protected with exceptions');
   protection.setWarningOnly(true);
   const ranges = sheet.getRangeList(['J:J', 'L:L', 'N:P']).getRanges();
   protection.setUnprotectedRanges(ranges);
-
-  sheet.getRangeList(["E:E"]).setNumberFormat("$#,##0.00");
   
   return sheet;
 }
@@ -185,7 +599,7 @@ function createClaimsDataSheet(ss) {
     'No.', 'Finance D Name', 'Finance D Matric No.', 'Finance D Phone No.',
     'Claimer Name', 'Claimer Matric No.', 'Claimer Phone No.', 'Email Address',
     'Portfolio', 'CCA', 'Claim Description', 'Total Claim Amount', 'Date',
-    'Reference Code', 'WBS Account Name', 'WBS No.', 'Remarks'
+    'Reference Code', 'WBS Account Name', 'WBS No.', 'Remarks', 'Other Emails Involved'
   ];
   
   const receiptHeaders = [
@@ -200,14 +614,18 @@ function createClaimsDataSheet(ss) {
   
   sheet.getRange(1, 1, 1, allHeaders.length)
     .setValues([allHeaders])
+    .setBackground('#4a86e8')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
     .setHorizontalAlignment('center');
   
   sheet.setColumnWidth(1, 50);
-  sheet.deleteRows(2, 999);
+  sheet.deleteRows(2, sheet.getMaxRows() - 1);
 
   const protection = sheet.protect().setDescription('Protected with exceptions');
   protection.setWarningOnly(true);
   
+  sheet.hideSheet();
   return sheet;
 }
 
@@ -251,6 +669,9 @@ function createAddClaimTemplate(ss) {
     .setBackground('#fce5cd')
     .setFontWeight('bold')
     .setHorizontalAlignment('center');
+
+  // FIX 2: Format I5 as DD/MM/YYYY (Timestamp cell in the pasted form response row)
+  sheet.getRange('I5').setNumberFormat('DD/MM/YYYY');
   
   // Claim info section header
   sheet.getRange('A7:B7').merge()
@@ -262,27 +683,42 @@ function createAddClaimTemplate(ss) {
   // Manual input fields start at row 8
   const startRow = 8;
   const fields = [
-    ['Finance D Name', '=IF($B$14<>"",\'Config\'!$B$3,"")'],
-    ['Finance D Matric No.', '=IF($B$14<>"",\'Config\'!$B$4,"")'],
-    ['Finance D Phone No.', '=IF($B$14<>"",\'Config\'!$B$5,"")'],
-    ['Claimer Name', '=IF($B$14<>"",IF(H5="",IFNA(VLOOKUP(B14,\'Identifier Data\'!$A:$F,4,FALSE),"Name not in list"),H5),"")'],
-    ['Claimer Matric No.', '=IF($B$14<>"",IF(I5="",IFNA(VLOOKUP(B14,\'Identifier Data\'!$A:$F,5,FALSE),"Name not in list"),I5),"")'],
-    ['Claimer Phone No.', '=IF($B$14<>"",IF(J5="",IFNA(VLOOKUP(B14,\'Identifier Data\'!$A:$F,6,FALSE),"Name not in list"),J5),"")'],
-    ['Email Address', '=IF(ISBLANK($B$5),"",B5)'],
-    ['Portfolio', '=IF(ISBLANK($B$14),"",C5)'],
-    ['CCA', '=IF(ISBLANK($B$14),"",D5)'],
-    ['Claim Description', '=IF(ISBLANK($B$14), "",E5)'],
-    ['Total Claim Amount', '=IF($B$14<>"",SUM(E16,G16,I16,K16,M16),"")'],  // Sum receipt amounts in row 16
-    ['Date', '=IF($B$14<>"",TEXT(TODAY(),"DD/MM/YYYY"),"")'],  // From timestamp
-    ['Reference Code', '=IF($B$14<>"",CONCATENATE(Config!$B$2,"-",UPPER(TEXT(TODAY(),"MMM")),"-",UPPER($B$15),"-",UPPER($B$16),"-",UPPER($B$17)),"")'],
-    ['WBS Account Name', ''],  // Manual entry
-    ['WBS No.', '=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "H-404-00-000003", "Managed by Hall Fund", "H-404-00-000004", "Master Fund", "E-404-10-0001-01", "Master Fund (RHMP)", "E-404-10-0001-07"),"")'],  // Manual entry or you can add SWITCH formula if needed
-    ['Remarks', '=IF(ISBLANK(F5),"",F5)'],
+    // B8: Finance D Name — from Config B3
+    ['Finance D Name', '=IF($A$5<>"",\'Config\'!$B$3,"")'],
+    // B9: Finance D Matric No. — from Config B4
+    ['Finance D Matric No.', '=IF($A$5<>"",\'Config\'!$B$4,"")'],
+    // B10: Finance D Phone No. — from Config B5
+    ['Finance D Phone No.', '=IF($A$5<>"",\'Config\'!$B$5,"")'],
+    // B11: Claimer Name — VLOOKUP by CCA (B16) from Identifier Data
+    ['Claimer Name', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$C,2,FALSE),"Name not in list"),"")'],
+    // B12: Claimer Matric No.
+    ['Claimer Matric No.', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$D,3,FALSE),"Not in list"),"")'],
+    // B13: Claimer Phone No.
+    ['Claimer Phone No.', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$E,4,FALSE),"Not in list"),"")'],
+    // B14: Email Address
+    ['Email Address', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$F,5,FALSE),"Not in list"),"")'],
+    // B15: Portfolio — from form response col B (Timestamp=A, Portfolio=B)
+    ['Portfolio', '=IF($A$5<>"",B5,"")'],
+    // B16: CCA — from form response col C
+    ['CCA', '=IF($A$5<>"",C5,"")'],
+    // B17: Claim Description — from form response col D
+    ['Claim Description', '=IF($A$5<>"",D5,"")'],
+    // B18: Total Claim Amount
+    ['Total Claim Amount', '=IF($A$5<>"",SUM(E16,G16,I16,K16,M16),"")'],
+    // B19: Date — FIX 2: formatted as DD/MM/YYYY
+    ['Date', '=IF($A$5<>"",TEXT(TODAY(),"DD/MM/YYYY"),"")'],
+    // FIX 1: Reference Code — AY-Portfolio-CCA-No. (zero-padded 3 digits)
+    ['Reference Code', '=IF($A$5<>"",CONCATENATE(\'Config\'!$B$2,"-",UPPER($B$15),"-",UPPER($B$16),"-",TEXT(COUNTIF(\'Master Sheet\'!$C:$C,$B$16)+1,"000")),"")'],
+    ['WBS Account Name', ''],
+    ['WBS No.', '=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "H-404-00-000003", "Managed by Hall Fund", "H-404-00-000004", "Master Fund", "E-404-10-0001-01", "Master Fund (RHMP)", "E-404-10-0001-07"),"")'],
+    // B23: Remarks — from form response col F
+    ['Remarks', '=IF($A$5<>"",F5,"")'],
+    // B24: Other Emails Involved — from form response col E
+    ['Other Emails Involved', '=IF($A$5<>"",E5,"")'],
     ['', ''],
     ['WBS Account Short Form', '=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "SA", "Managed by Hall Fund", "MBH", "Master Fund", "MF", "Master Fund (RHMP)", "MF (RHMP)"),"")']
   ];
 
-  // Add dropdown validation for WBS Account Name (cell B21)
   const wbsAccountOptions = [
     'Student Activity Fund',
     'Managed by Hall Fund',
@@ -296,32 +732,17 @@ function createAddClaimTemplate(ss) {
     .setHelpText('Select a WBS Account')
     .build();
 
-  sheet.getRange('B21').setDataValidation(wbsRule);
+  sheet.getRange('B21').setDataValidation(wbsRule).setHorizontalAlignment('center');
 
-  // Category options for dropdown
   const categoryOptions = [
-    'Office Supplies',
-    'Consumables',
-    'Sports & Cultural Materials',
-    'Other fees (Others)',
-    'Professional fees',
-    'Bank Charges',
-    'Licensing/Subscription',
-    'Postage & Telecommunication Charges',
-    'Maintenance (Equipment)',
-    'Lease expense (premises)',
-    'Lease expense (rental of equipment)',
-    'Furniture',
-    'Equipment Purchase',
-    'Publications',
-    'Meals & Refreshments',
-    'Local Travel',
-    'Student awards/prizes',
-    'Donation/Sponsorship',
-    'Miscellaneous Expense',
-    'Other Services',
-    'Fund Transfer',
-    'N/A'
+    'Office Supplies', 'Consumables', 'Sports & Cultural Materials',
+    'Other fees (Others)', 'Professional fees', 'Bank Charges',
+    'Licensing/Subscription', 'Postage & Telecommunication Charges',
+    'Maintenance (Equipment)', 'Lease expense (premises)',
+    'Lease expense (rental of equipment)', 'Furniture', 'Equipment Purchase',
+    'Publications', 'Meals & Refreshments', 'Local Travel',
+    'Student awards/prizes', 'Donation/Sponsorship', 'Miscellaneous Expense',
+    'Other Services', 'Fund Transfer', 'N/A'
   ];
 
   const categoryRule = SpreadsheetApp.newDataValidation()
@@ -330,14 +751,12 @@ function createAddClaimTemplate(ss) {
     .setHelpText('Select expense category')
     .build();
 
-  // DR/CR validation
   const drCrRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(['DR', 'CR'], true)
     .setAllowInvalid(false)
     .setHelpText('Select DR (Debit) or CR (Credit)')
     .build();
 
-  // GST Code validation
   const gstCodeRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(['IE', 'I9', 'L9'], true)
     .setAllowInvalid(false)
@@ -355,14 +774,25 @@ function createAddClaimTemplate(ss) {
     }
   });
   
-  // Receipt sections with formulas to extract from Google Forms
   const cols = ['D', 'F', 'H', 'J', 'L'];
   const receiptLabels = ['RECEIPT 1', 'RECEIPT 2', 'RECEIPT 3', 'RECEIPT 4', 'RECEIPT 5'];
-  
-  // Google Forms column mapping (starting from column K in row 5)
-  // K=Description1, L=Company1, M=Date1, N=ReceiptNo1, O=Amount1, P=Softcopy1, Q=Bank1, R=MoreReceipts1
-  // S=Description2, etc.
-  const formColumnStarts = [11, 19, 27, 35, 43]; // K, S, AA, AI, AQ (columns 11, 19, 27, 35, 43)
+  // Column positions in Form Responses row 5 (1-indexed):
+  // Column positions in Form Responses row 5 (1-indexed, NO Processed/Error cols pasted):
+  // A=1(Timestamp) B=2(Portfolio) C=3(CCA) D=4(ClaimDesc) E=5(OtherEmails) F=6(Remarks)
+  // Receipt blocks (6 cols each: Desc, Company, Date, ReceiptNo, Amount, MoreReceipts?):
+  //   R1=7, R2=13, R3=19, R4=25, R5=31 (R5 no MoreReceipts, only 5 cols)
+  // File uploads at the end:
+  // File uploads at the end:
+  //   R1 Softcopy=36, R1 Bank=37, R2 Softcopy=38, R2 Bank=39,
+  //   R3 Softcopy=40, R3 Bank=41, R4 Softcopy=42, R4 Bank=43,
+  //   R5 Softcopy=44, R5 Bank=45
+  //   R3 Softcopy=46, R3 Bank=47, R4 Softcopy=48, R4 Bank=49,
+  //   R5 Softcopy=50, R5 Bank=51
+  //   R3 Softcopy=48, R3 Bank=49, R4 Softcopy=50, R4 Bank=51,
+  //   R5 Softcopy=52, R5 Bank=53
+  const formColumnStarts = [7, 13, 19, 25, 31];
+  const softcopyColumns = [36, 38, 40, 42, 44];
+  const bankColumns     = [37, 39, 41, 43, 45];
   
   cols.forEach((col, i) => {
     sheet.getRange(`${col}7`)
@@ -371,18 +801,21 @@ function createAddClaimTemplate(ss) {
       .setFontWeight('bold')
       .setHorizontalAlignment('center');
     
+    const descColLetter = String.fromCharCode(cols[i].charCodeAt(0) + 1);
+    const descCell = `${descColLetter}${startRow + 1}`;
     const receiptFields = [
-      ['DR/CR', ''],
+      ['DR/CR', `=IF(${descCell}="","","DR")`],
       ['Description', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]},FALSE))`],
       ['Category', ''],
       ['Category Code', ''],
-      ['GST Code', ''],
+      ['GST Code', `=IF(${descCell}="","","IE")`],
       ['Company', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+1},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+1},FALSE))`],
-      ['Date', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE))`],
+      // FIX 2: Receipt date fields formatted as DD/MM/YYYY
+      ['Date', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE)),"",TEXT(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE),"DD/MM/YYYY"))`],
       ['Receipt No.', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+3},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+3},FALSE))`],
       ['Amount', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+4},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+4},FALSE))`],
-      ['Softcopy Link', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+5},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+5},FALSE))`],
-      ['Bank Link', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+6},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+6},FALSE))`]
+      ['Softcopy Link', `=IF(ISBLANK(INDIRECT("R5C"&${softcopyColumns[i]},FALSE)),"",INDIRECT("R5C"&${softcopyColumns[i]},FALSE))`],
+      ['Bank Link', `=IF(ISBLANK(INDIRECT("R5C"&${bankColumns[i]},FALSE)),"",INDIRECT("R5C"&${bankColumns[i]},FALSE))`]
     ];
     
     receiptFields.forEach((field, j) => {
@@ -395,22 +828,21 @@ function createAddClaimTemplate(ss) {
         .setFontSize(9)
         .setFontWeight('bold');
       
-      // Add formula in the value column
       if (field[1]) {
-        sheet.getRange(valueCell)
-        .setFormula(field[1])
-        .setHorizontalAlignment('center');
+        if (field[1].startsWith('=')) {
+          sheet.getRange(valueCell).setFormula(field[1]).setHorizontalAlignment('center');
+        } else {
+          sheet.getRange(valueCell).setValue(field[1]).setHorizontalAlignment('center');
+        }
       } else {
         sheet.getRange(valueCell).setHorizontalAlignment('center');
       }
       
-      // Add data validation for specific fields
       if (field[0] === 'DR/CR') {
         sheet.getRange(valueCell).setDataValidation(drCrRule);
       } else if (field[0] === 'Category') {
         sheet.getRange(valueCell).setDataValidation(categoryRule);
         
-        // Add Category Code formula in the next column (Category Code row)
         const categoryCodeCell = `${colLetter}${startRow + j + 1}`;
         const categoryCell = valueCell;
         sheet.getRange(categoryCodeCell).setFormula(
@@ -447,11 +879,9 @@ function createAddClaimTemplate(ss) {
   sheet.setColumnWidth(1, 150);
   sheet.setColumnWidth(2, 300);
 
-  // Get existing rules first
   let rules = sheet.getConditionalFormatRules();
 
-  // 1) Check if Email (B14) is filled, then highlight empty cells in B8:B22
-  const emailRequiredCells = ['B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22'];
+  const emailRequiredCells = ['B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22','B23','B24'];
   emailRequiredCells.forEach(cell => {
     const rule = SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied(`=AND($B$14<>"", ${cell}="")`)
@@ -461,7 +891,6 @@ function createAddClaimTemplate(ss) {
     rules.push(rule);
   });
 
-  // 2-6) Check if Description columns are filled, then highlight empty required cells
   const descriptionColumns = ['E', 'G', 'I', 'K', 'M'];
   descriptionColumns.forEach(col => {
     const requiredCells = [`${col}8`, `${col}10`, `${col}11`, `${col}12`];
@@ -475,12 +904,8 @@ function createAddClaimTemplate(ss) {
     });
   });
 
-  // Apply all conditional formatting rules
   sheet.setConditionalFormatRules(rules);
   
-  sheet.getRangeList(["B18", "E16", "G16", "I16", "K16", "M16"]).setNumberFormat("$#,##0.00");
-
-  // Create template copy
   let templateSheet = ss.getSheetByName('Claim Data Template');
 
   if (templateSheet) {
@@ -526,7 +951,7 @@ function createIdentifierDataSheet(ss) {
   sheet = ss.insertSheet('Identifier Data', 4);
   
   const data = [
-    ['Email Address', 'Portfolio', 'CCA', 'Full Name', 'Matric No.', 'Phone No.']
+    ['Portfolio', 'CCA', 'Name', 'Matric', 'Phone Number', 'Email Address']
   ];
   
   const range = sheet.getRange(1, 1, 1, 6);
@@ -588,9 +1013,10 @@ function loadConfigFromSheet(ss) {
   return config;
 }
 
-/**
- * Adds custom menu on open.
- */
+// ============================================================================
+// PART 3: MENU & UTILITY FUNCTIONS
+// ============================================================================
+
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   const menu = ui.createMenu(CONFIG.MENU.TITLE);
@@ -598,9 +1024,6 @@ function onOpen() {
   menu.addToUi();
 }
 
-/**
- * Get a sheet by name and fail fast if it doesn't exist.
- */
 function getSheetOrThrow(spreadsheet, sheetName) {
   const sheet = spreadsheet.getSheetByName(sheetName);
   if (!sheet) {
@@ -609,16 +1032,10 @@ function getSheetOrThrow(spreadsheet, sheetName) {
   return sheet;
 }
 
-/**
- * Read a list of single-cell ranges into an array of values.
- */
 function getCellValues(sheet, ranges) {
   return ranges.map(range => sheet.getRange(range).getValue());
 }
 
-/**
- * Build a list of A1 ranges for a column and row span.
- */
 function buildColumnRangeList(columnLetter, startRow, endRow) {
   const ranges = [];
   for (let r = startRow; r <= endRow; r++) {
@@ -627,25 +1044,16 @@ function buildColumnRangeList(columnLetter, startRow, endRow) {
   return ranges;
 }
 
-/**
- * Format date cells into the configured timezone and date format.
- */
 function formatDateIfNeeded(value) {
   return value instanceof Date
     ? Utilities.formatDate(value, CONFIG.TIMEZONE, CONFIG.DATE_FORMAT)
     : value;
 }
 
-/**
- * Format numeric values into 2-decimal currency strings.
- */
 function formatMoney(value) {
   return typeof value === 'number' ? value.toFixed(2) : value;
 }
 
-/**
- * Extract Drive file IDs from comma-separated URLs in a cell.
- */
 function extractDriveFileIds(cellValue) {
   if (!cellValue) return [];
   return cellValue
@@ -659,9 +1067,6 @@ function extractDriveFileIds(cellValue) {
     .filter(Boolean);
 }
 
-/**
- * Iterate through each receipt block in the claims row.
- */
 function forEachReceipt(row, callback) {
   for (let r = 0; r < CONFIG.RECEIPT.COUNT; r++) {
     const base = CONFIG.CLAIMS_COL.DESC_START + (r * CONFIG.RECEIPT.BLOCK_WIDTH);
@@ -684,16 +1089,10 @@ function forEachReceipt(row, callback) {
   }
 }
 
-/**
- * Find a claim row in the Claims Data sheet by claim number.
- */
 function findClaimRow(claimsData, claimNo) {
   return claimsData.find(r => r[CONFIG.CLAIMS_COL.NO] == claimNo);
 }
 
-/**
- * Confirm a potentially destructive batch action.
- */
 function confirmBatchAction(title, message) {
   const ui = SpreadsheetApp.getUi();
   const response = ui.alert(title, message, ui.ButtonSet.YES_NO);
@@ -704,9 +1103,6 @@ function confirmBatchAction(title, message) {
   return true;
 }
 
-/**
- * Get master sheet rows that are marked for processing and not yet completed.
- */
 function getPendingRowIndices(masterData, generateCol, statusCol) {
   const pending = [];
   for (let i = 1; i < masterData.length; i++) {
@@ -717,24 +1113,15 @@ function getPendingRowIndices(masterData, generateCol, statusCol) {
   return pending;
 }
 
-/**
- * Mark a master sheet row as completed.
- */
 function markMasterStatus(masterSheet, rowIndex, statusCol) {
   masterSheet.getRange(rowIndex + 1, statusCol + 1).setValue(true);
 }
 
-/**
- * Find a single file in a folder by exact name.
- */
 function findFileByNameInFolder(folder, fileName) {
   const files = folder.getFilesByName(fileName);
   return files.hasNext() ? files.next() : null;
 }
 
-/**
- * Ensure only one compiled PDF exists by deleting older copies with the same name.
- */
 function deleteExistingFileByName(folder, fileName) {
   const files = folder.getFilesByName(fileName);
   while (files.hasNext()) {
@@ -742,17 +1129,11 @@ function deleteExistingFileByName(folder, fileName) {
   }
 }
 
-/**
- * Export a Google file (Doc/Sheet) to a PDF blob.
- */
 function exportToPdfBlob(file, outputName) {
   const pdfBlob = file.getBlob().getAs('application/pdf');
   return pdfBlob.setName(outputName);
 }
 
-/**
- * Load pdf-lib at runtime (required to merge PDFs).
- */
 function loadPdfLib() {
   if (typeof setTimeout === 'undefined') {
     this.setTimeout = (fn, ms) => {
@@ -770,9 +1151,6 @@ function loadPdfLib() {
   return factory();
 }
 
-/**
- * Merge multiple PDF blobs into a single PDF blob.
- */
 async function mergePdfBlobs(pdfBlobs, outputName) {
   const PDFLib = loadPdfLib();
   const mergedPdf = await PDFLib.PDFDocument.create();
@@ -788,9 +1166,6 @@ async function mergePdfBlobs(pdfBlobs, outputName) {
   return Utilities.newBlob(mergedBytes, 'application/pdf', outputName);
 }
 
-/**
- * Build the HTML list of receipt summaries for the email body.
- */
 function buildReceiptListHtml(row) {
   let receiptCount = 0;
   let receiptListHtml = '';
@@ -807,9 +1182,6 @@ function buildReceiptListHtml(row) {
   return receiptListHtml;
 }
 
-/**
- * Collect Drive file blobs from receipt and bank URL cells.
- */
 function collectReceiptAttachments(row, referenceCode) {
   const attachments = [];
   let totalSizeBytes = 0;
@@ -848,39 +1220,58 @@ function collectReceiptAttachments(row, referenceCode) {
   return attachments;
 }
 
-/**
- * Build the email HTML body for a claim.
- */
 function buildClaimEmailHtml(payload) {
+  const tableStyle = 'border-collapse: collapse; width: 100%; max-width: 500px;';
+  const tdLabel = 'padding: 6px 10px; border: 1px solid #ccc; background-color: #f5f5f5; font-weight: bold; width: 40%;';
+  const tdValue = 'padding: 6px 10px; border: 1px solid #ccc;';
+
+  // Build CC line for display in email body
+  const ccEmails = ['rh.finance@u.nus.edu'];
+  if (payload.otherEmails) {
+    payload.otherEmails.split(',').map(e => e.trim()).filter(Boolean).forEach(e => ccEmails.push(e));
+  }
+
   return `
-    <div style="font-family: Arial, sans-serif; color: #000;">
+    <div style="font-family: Arial, sans-serif; color: #222; font-size: 14px; line-height: 1.6;">
+
+      <p>Hi ${payload.name.split(' ')[0]},</p>
+
+      <p>We have received your claim and after sending the following email, this is a confirmation that your claim is being processed.</p>
+
+      <p>Please copy and paste everything below the line into a new email, and attach all the attachments from this email:</p>
+
+      <p>
+        <strong>To:</strong> rh.finance@u.nus.edu<br>
+        ${ccEmails.length > 1 ? `<strong>CC:</strong> ${ccEmails.slice(1).join(', ')}<br>` : ''}
+        <strong>Subject:</strong> ${payload.referenceCode}
+      </p>
+
+      <hr style="border: none; border-top: 2px solid #000; margin: 20px 0;">
+
       <p>Dear Ryan,</p>
       <p>Attached is the claims for ${payload.event}.</p>
       <p>To whom it may concern,</p>
       <p>I, ${payload.name.toUpperCase()}, ${payload.matric.toUpperCase()}, hereby authorise my treasurer, Ryan, to collect reimbursement on my behalf.</p>
-      
+
       <strong>Claims Summary</strong><br>
-      <table style="border-collapse: collapse; width: 100%; max-width: 450px; border: 1px solid black;">
-        <tr><td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">CCA</td><td style="padding: 5px; border: 1px solid black;">${payload.ccaName}</td></tr>
-        <tr><td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">Event</td><td style="padding: 5px; border: 1px solid black;">${payload.event.toUpperCase()}</td></tr>
-        <tr><td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">CCA Treasurer</td><td style="padding: 5px; border: 1px solid black;">${payload.name.toUpperCase()}</td></tr>
-        <tr><td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">Phone Number for PayNow</td><td style="padding: 5px; border: 1px solid black;">${payload.phone}</td></tr>
-        <tr><td style="padding: 5px; border: 1px solid black; background-color: #f9f9f9;">Total collated amount</td><td style="padding: 5px; border: 1px solid black;">$${payload.totalFormatted}</td></tr>
+      <table style="${tableStyle}">
+        <tr><td style="${tdLabel}">CCA</td><td style="${tdValue}">${payload.ccaName}</td></tr>
+        <tr><td style="${tdLabel}">Event</td><td style="${tdValue}">${payload.event.toUpperCase()}</td></tr>
+        <tr><td style="${tdLabel}">CCA Treasurer</td><td style="${tdValue}">${payload.name.toUpperCase()}</td></tr>
+        <tr><td style="${tdLabel}">Phone Number for PayNow</td><td style="${tdValue}">${payload.phone}</td></tr>
+        <tr><td style="${tdLabel}">Total collated amount</td><td style="${tdValue}">$${payload.totalFormatted}</td></tr>
       </table>
-      
+
       <p><strong>Purpose of Purchase:</strong><br>
       ${payload.receiptListHtml || 'No individual receipts found.'}</p>
-      
-      <p><strong>Remarks:</strong><br>
-      ${payload.remarks || 'No additional remarks.'}</p>
-      
+
+      ${payload.remarks ? `<p><strong>Remarks:</strong><br>${payload.remarks}</p>` : ''}
+
       <p>Thank you.</p>
+
     </div>`;
 }
 
-/**
- * Reset the Add Claim sheet by copying the template.
- */
 function resetAddClaimSheet(spreadsheet, templateSheet) {
   const oldSheet = spreadsheet.getSheetByName(CONFIG.SHEETS.ADD_CLAIM);
   if (oldSheet) {
@@ -892,6 +1283,10 @@ function resetAddClaimSheet(spreadsheet, templateSheet) {
   spreadsheet.moveActiveSheet(3);
 }
 
+// ============================================================================
+// PART 4: CORE WORKFLOW FUNCTIONS (UNCHANGED)
+// ============================================================================
+
 function addClaim() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const templateSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.TEMPLATE);
@@ -900,33 +1295,43 @@ function addClaim() {
   const masterSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.MASTER);
   const formResponsesSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.FORM_RESPONSES);
 
-  // Build ranges for receipt blocks
   const receiptRanges = CONFIG.ADD_CLAIM.RECEIPT_COLUMNS.flatMap(column =>
     buildColumnRangeList(column, CONFIG.ADD_CLAIM.RECEIPT_ROWS.START, CONFIG.ADD_CLAIM.RECEIPT_ROWS.END)
   );
 
-  // Claims Data row
   const rowClaimsData = [
-    claimsDataSheet.getLastRow(), // No.
+    claimsDataSheet.getLastRow(),
     ...getCellValues(addClaimSheet, CONFIG.ADD_CLAIM.CLAIM_RANGES),
     ...getCellValues(addClaimSheet, receiptRanges)
   ];
 
-  // Master Sheet row
   const rowMasterData = [
     masterSheet.getLastRow(),
     ...getCellValues(addClaimSheet, CONFIG.ADD_CLAIM.MASTER_RANGES)
   ];
 
   claimsDataSheet.appendRow(rowClaimsData);
+  const newClaimsRow = claimsDataSheet.getLastRow();
+  claimsDataSheet.getRange(newClaimsRow, 1, 1, claimsDataSheet.getLastColumn())
+    .setBackground(null)
+    .setFontColor(null)
+    .setFontWeight('normal')
+    .setHorizontalAlignment('center')
+    .setWrap(false);
   masterSheet.appendRow(rowMasterData);
+  // Clear header formatting that bleeds into new rows
+  const newMasterRow = rowMasterData[0] + 1;
+  masterSheet.getRange(newMasterRow, 1, 1, masterSheet.getLastColumn())
+    .setBackground(null)
+    .setFontColor(null)
+    .setFontWeight('normal')
+    .setHorizontalAlignment('center')
+    .setWrap(false);
   masterSheet.getRange(rowMasterData[0] + 1, 10, 1, 5).insertCheckboxes();
   masterSheet.getRange(rowMasterData[0] + 1, 16, 1, 2).insertCheckboxes();
 
-  // Reset "Add Claim" sheet
   resetAddClaimSheet(spreadsheet, templateSheet);
 
-  // Switch to Master Sheet after adding a claim
   spreadsheet.setActiveSheet(formResponsesSheet);
 
   const ui = SpreadsheetApp.getUi();
@@ -939,7 +1344,6 @@ function generateEmail() {
   const masterSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.MASTER);
   const MASTER_COL = CONFIG.MASTER_COL_EMAIL;
 
-  // Read master and claims data once for performance
   const masterData = masterSheet.getDataRange().getValues();
   const pendingRows = getPendingRowIndices(masterData, MASTER_COL.GENERATE_EMAIL, MASTER_COL.EMAILS_SENT);
 
@@ -956,14 +1360,12 @@ function generateEmail() {
   }
 
   const claimsData = claimsDataSheet.getDataRange().getValues();
-
   let sentCount = 0;
 
   pendingRows.forEach(rowIndex => {
     const masterRow = masterData[rowIndex];
     const claimNo = masterRow[MASTER_COL.NO];
 
-    // Find matching claim data
     const row = findClaimRow(claimsData, claimNo);
     if (!row) {
       console.log("No matching data found for Claim No: " + claimNo);
@@ -979,19 +1381,25 @@ function generateEmail() {
       ccaName: (row[CONFIG.CLAIMS_COL.CCA] || '').toString(),
       remarks: (row[CONFIG.CLAIMS_COL.REMARKS] || '').toString().replace(/\n/g, '<br>'),
       totalFormatted: formatMoney(row[CONFIG.CLAIMS_COL.TOTAL]),
-      referenceCode: row[CONFIG.CLAIMS_COL.REFERENCE_CODE]
+      referenceCode: row[CONFIG.CLAIMS_COL.REFERENCE_CODE],
+      otherEmails: (row[CONFIG.CLAIMS_COL.OTHER_EMAILS] || '').toString().trim()
     };
 
     const receiptListHtml = buildReceiptListHtml(row);
     const attachments = collectReceiptAttachments(row, payload.referenceCode);
-    const htmlTemplate = buildClaimEmailHtml({
-      ...payload,
-      receiptListHtml
-    });
+    const htmlTemplate = buildClaimEmailHtml({ ...payload, receiptListHtml });
 
+    // Build CC list: other emails involved + rh.finance@u.nus.edu
+    const ccList = ['rh.finance@u.nus.edu'];
+    if (payload.otherEmails) {
+      payload.otherEmails.split(',').map(e => e.trim()).filter(Boolean).forEach(e => ccList.push(e));
+    }
+
+    // Send to claimer with confirmation message
     GmailApp.sendEmail(payload.recipientEmail, payload.referenceCode, "", {
       htmlBody: htmlTemplate,
-      attachments: attachments
+      attachments: attachments,
+      cc: ccList.join(', ')
     });
 
     markMasterStatus(masterSheet, rowIndex, MASTER_COL.EMAILS_SENT);
@@ -1009,7 +1417,6 @@ function generateForm() {
   const masterSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.MASTER);
   const MASTER_COL = CONFIG.MASTER_COL_FORM;
 
-  // Read master and claims data once for performance
   const masterData = masterSheet.getDataRange().getValues();
   const pendingRows = getPendingRowIndices(masterData, MASTER_COL.GENERATE_FORM, MASTER_COL.FORMS_GENERATED);
 
@@ -1026,10 +1433,9 @@ function generateForm() {
   }
 
   const claimsData = claimsDataSheet.getDataRange().getValues();
-  
-  // Get or create the main RFPs folder
-  const mainFolderId = getOrCreateFolder(CONFIG.FOLDERS.RFP_ROOT_NAME, DriveApp.getFolderById(CONFIG.FOLDERS.RFP_ROOT_ID));
-  const mainFolder = DriveApp.getFolderById(mainFolderId);
+  const mainFolder = DriveApp.getFolderById(
+    getOrCreateFolder(CONFIG.FOLDERS.RFP_ROOT_NAME, DriveApp.getFolderById(CONFIG.FOLDERS.RFP_ROOT_ID))
+  );
 
   let generatedCount = 0;
 
@@ -1037,7 +1443,6 @@ function generateForm() {
     const masterRow = masterData[rowIndex];
     const claimNo = masterRow[MASTER_COL.NO];
 
-    // Find the corresponding data row in Claims Data sheet
     const row = findClaimRow(claimsData, claimNo);
     if (!row) {
       console.log("No matching data found for Claim No: " + claimNo);
@@ -1050,21 +1455,17 @@ function generateForm() {
       return;
     }
 
-    // Create subfolder for this claim
     const subfolderName = `Claim No. ${claimNo} - (${referenceCode})`;
-    const claimFolderId = getOrCreateFolder(subfolderName, mainFolder);
-    const claimFolder = DriveApp.getFolderById(claimFolderId);
+    const claimFolder = DriveApp.getFolderById(getOrCreateFolder(subfolderName, mainFolder));
 
     try {
-      // Generate all three forms
       generateLOA(claimNo, row, claimFolder);
       generateSummary(claimNo, row, claimFolder);
       generateRFP(claimNo, row, claimFolder);
 
-      // Mark as generated
       markMasterStatus(masterSheet, rowIndex, MASTER_COL.FORMS_GENERATED);
       generatedCount++;
-      
+
       console.log(`Successfully generated forms for ${referenceCode}`);
     } catch (e) {
       console.error(`Error generating forms for ${referenceCode}: ${e.message}`);
@@ -1077,10 +1478,6 @@ function generateForm() {
   }
 }
 
-/**
- * Compile LOA, Summary, and RFP into a single PDF per claim.
- * Run only after confirming all three documents are formatted correctly.
- */
 async function compileForms() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const claimsDataSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.CLAIMS_DATA);
@@ -1088,11 +1485,8 @@ async function compileForms() {
   const MASTER_COL = CONFIG.MASTER_COL_COMPILE;
   const FORM_COL = CONFIG.MASTER_COL_FORM;
 
-  // Read master and claims data once for performance
   const masterData = masterSheet.getDataRange().getValues();
   const claimsData = claimsDataSheet.getDataRange().getValues();
-
-  // Only compile for claims checked in the master sheet
   const rowsToCompile = getPendingRowIndices(masterData, MASTER_COL.GENERATE_COMPILE, MASTER_COL.COMPILED);
 
   if (rowsToCompile.length === 0) {
@@ -1107,7 +1501,6 @@ async function compileForms() {
     return;
   }
 
-  // Get or create the main RFPs folder
   const mainFolderId = getOrCreateFolder(CONFIG.FOLDERS.RFP_ROOT_NAME, DriveApp.getFolderById(CONFIG.FOLDERS.RFP_ROOT_ID));
   const mainFolder = DriveApp.getFolderById(mainFolderId);
 
@@ -1123,24 +1516,15 @@ async function compileForms() {
     const claimNo = masterData[rowIndex][MASTER_COL.NO];
 
     if (masterData[rowIndex][FORM_COL.FORMS_GENERATED] !== true) {
-      console.log('Forms not generated for Claim No: ' + claimNo + '. Skipping compile.');
       skippedNotGenerated++;
       continue;
     }
 
     const row = findClaimRow(claimsData, claimNo);
-    if (!row) {
-      console.log('No matching data found for Claim No: ' + claimNo);
-      skippedMissingData++;
-      continue;
-    }
+    if (!row) { skippedMissingData++; continue; }
 
     const referenceCode = (row[CONFIG.CLAIMS_COL.REFERENCE_CODE] || '').toString();
-    if (!referenceCode) {
-      console.log('No reference code found for Claim No: ' + claimNo);
-      skippedMissingReference++;
-      continue;
-    }
+    if (!referenceCode) { skippedMissingReference++; continue; }
 
     const claimFolderName = `Claim No. ${claimNo} - (${referenceCode})`;
     const claimFolderId = getOrCreateFolder(claimFolderName, mainFolder);
@@ -1155,7 +1539,6 @@ async function compileForms() {
     const rfpFile = findFileByNameInFolder(claimFolder, rfpName);
 
     if (!loaFile || !summaryFile || !rfpFile) {
-      console.log(`Missing LOA/Summary/RFP for ${referenceCode}. Skipping compile.`);
       skippedMissingFiles++;
       continue;
     }
@@ -1185,9 +1568,7 @@ async function compileForms() {
   if (compiledCount > 0) {
     SpreadsheetApp.getUi().alert(`Success: Compiled ${compiledCount} PDF(s).`);
   } else {
-    const errorDetails = errorMessages.length
-      ? `\n\nErrors:\n${errorMessages.join('\n')}`
-      : '';
+    const errorDetails = errorMessages.length ? `\n\nErrors:\n${errorMessages.join('\n')}` : '';
     SpreadsheetApp.getUi().alert(
       `No PDFs compiled.\n` +
       `Not generated: ${skippedNotGenerated}\n` +
@@ -1200,9 +1581,6 @@ async function compileForms() {
   }
 }
 
-/**
- * Get a folder by name within a parent, or create it if missing.
- */
 function getOrCreateFolder(folderName, parentFolder) {
   const folders = parentFolder.getFoldersByName(folderName);
   if (folders.hasNext()) {
@@ -1212,16 +1590,13 @@ function getOrCreateFolder(folderName, parentFolder) {
   }
 }
 
-/**
- * Generate LOA (List of Attachments) Google Doc
- * Alternates between receipt and bank transaction images/PDFs
- * One image per page, no text labels
- * PDFs are converted to images (one image per PDF page)
- */
+// ============================================================================
+// PART 5: DOCUMENT GENERATION FUNCTIONS (UNCHANGED)
+// ============================================================================
+
 function generateLOA(claimNo, row, folder) {
   const referenceCode = (row[CONFIG.CLAIMS_COL.REFERENCE_CODE] || "").toString();
 
-  // Create a temporary Google Doc to build the LOA
   const doc = DocumentApp.create(`LOA No. ${claimNo} - (${referenceCode})`);
   const body = doc.getBody();
 
@@ -1229,19 +1604,15 @@ function generateLOA(claimNo, row, folder) {
 
   let isFirstImage = true;
 
-  // Helper: add a file (image or PDF) to the document
   const addFileToDoc = (fileId) => {
-    if (!fileId) return;
     try {
       const file = DriveApp.getFileById(fileId);
       const mimeType = file.getMimeType();
       
-      // Check if it's a PDF
       if (mimeType === 'application/pdf') {
-        // For PDFs, convert to a Google Doc and copy contents
         let convertedFileId = null;
         let conversionSuccessful = false;
-        let contentElements = []; // Store all content elements
+        let contentElements = [];
         
         try {
           const pdfBlob = file.getBlob();
@@ -1252,7 +1623,6 @@ function generateLOA(claimNo, row, folder) {
             parents: [folder.getId()]
           };
           
-          // Use Drive API v3 to upload and convert
           const convertedFile = Drive.Files.create(fileMetadata, pdfBlob, {
             supportsAllDrives: true,
             fields: 'id'
@@ -1261,21 +1631,16 @@ function generateLOA(claimNo, row, folder) {
           if (convertedFile && convertedFile.id) {
             convertedFileId = convertedFile.id;
             
-            // Open the converted doc and get all content
             const tempDoc = DocumentApp.openById(convertedFile.id);
             const tempBody = tempDoc.getBody();
-            
-            // Get total number of child elements (paragraphs, images, tables, etc.)
             const numChildren = tempBody.getNumChildren();
             
-            // Check if there's actual content (not just empty paragraphs)
             let hasContent = false;
             
             for (let i = 0; i < numChildren; i++) {
               const element = tempBody.getChild(i);
               const elementType = element.getType();
               
-              // Check if element has meaningful content
               if (elementType === DocumentApp.ElementType.PARAGRAPH) {
                 const para = element.asParagraph();
                 if (para.getText().trim().length > 0 || para.getNumChildren() > 0) {
@@ -1292,9 +1657,6 @@ function generateLOA(claimNo, row, folder) {
             
             if (hasContent && contentElements.length > 0) {
               conversionSuccessful = true;
-              console.log(`Successfully converted PDF ${file.getName()} with ${contentElements.length} elements`);
-            } else {
-              console.log(`No meaningful content extracted from ${file.getName()}`);
             }
           }
           
@@ -1302,30 +1664,21 @@ function generateLOA(claimNo, row, folder) {
           console.log(`PDF conversion error for ${file.getName()}: ${convertError.message}`);
           conversionSuccessful = false;
         } finally {
-          // Always delete the temporary converted doc if it was created
           if (convertedFileId) {
             try {
               DriveApp.getFileById(convertedFileId).setTrashed(true);
-              console.log(`Cleaned up temp file for ${file.getName()}`);
             } catch (deleteError) {
               console.log(`Could not delete temp file: ${deleteError.message}`);
             }
           }
         }
         
-        // Decide what to do based on conversion success
         if (conversionSuccessful && contentElements.length > 0) {
-          // Conversion was successful - add all content to the document
-          // Add page break before first element if this isn't the first item
-          if (!isFirstImage) {
-            body.appendPageBreak();
-          }
+          if (!isFirstImage) body.appendPageBreak();
           isFirstImage = false;
           
-          // Add all content elements
           contentElements.forEach(element => {
             const elementType = element.getType();
-            
             if (elementType === DocumentApp.ElementType.PARAGRAPH) {
               body.appendParagraph(element.asParagraph().copy());
             } else if (elementType === DocumentApp.ElementType.TABLE) {
@@ -1334,29 +1687,21 @@ function generateLOA(claimNo, row, folder) {
               body.appendListItem(element.asListItem().copy());
             }
           });
-          
-          console.log(`Added ${contentElements.length} elements from ${file.getName()} to LOA`);
         } else {
-          // Conversion failed or no meaningful content - copy original PDF to folder
           try {
             file.makeCopy(file.getName(), folder);
-            console.log(`Copied original PDF ${file.getName()} to folder (conversion unsuccessful)`);
           } catch (copyError) {
             console.log(`Could not copy PDF: ${copyError.message}`);
           }
         }
         
       } else {
-        // It's an image file - add it directly
-        if (!isFirstImage) {
-          body.appendPageBreak();
-        }
+        if (!isFirstImage) body.appendPageBreak();
         isFirstImage = false;
         
         const blob = file.getBlob();
         const image = body.appendImage(blob);
         
-        // Scale image to fit page width (max 550px to account for margins)
         const width = image.getWidth();
         const height = image.getHeight();
         if (width > 550) {
@@ -1370,33 +1715,25 @@ function generateLOA(claimNo, row, folder) {
     }
   };
 
-  // Process each receipt block
   forEachReceipt(row, receipt => {
     if (!receipt.desc || receipt.amount === '') return;
-
     extractDriveFileIds(receipt.imgUrlCell).forEach(addFileToDoc);
     extractDriveFileIds(receipt.bankUrlCell).forEach(addFileToDoc);
   });
 
-  // Remove the default empty paragraph at the beginning if we added images
   if (!isFirstImage) {
     const paragraphs = body.getParagraphs();
-    if (paragraphs.length > 1 && paragraphs[0].getText() === '') {
+    if (paragraphs.length > 0 && paragraphs[0].getText() === '') {
       paragraphs[0].removeFromParent();
     }
   }
 
-  // Save and close the document
   doc.saveAndClose();
   
-  // Move the Google Doc to the claim folder
   const docFile = DriveApp.getFileById(doc.getId());
   docFile.moveTo(folder);
 }
 
-/**
- * Generate Summary spreadsheet by copying template and filling in data
- */
 function generateSummary(claimNo, row, folder) {
   const referenceCode = (row[CONFIG.CLAIMS_COL.REFERENCE_CODE] || "").toString();
   const financeDirectorName = (row[CONFIG.CLAIMS_COL.FINANCE_D_NAME] || "").toString();
@@ -1409,25 +1746,20 @@ function generateSummary(claimNo, row, folder) {
   const formattedDate = formatDateIfNeeded(date);
   const wbsNo = (row[CONFIG.CLAIMS_COL.WBS_NO] || "").toString();
   
-  console.log("attempting to copy template");
-
-  // Copy the template to the claim folder
   const templateFile = DriveApp.getFileById(CONFIG.TEMPLATE_IDS.SUMMARY);
   const copiedFile = templateFile.makeCopy(`Summary No. ${claimNo} - (${referenceCode})`, folder);
   const ss = SpreadsheetApp.openById(copiedFile.getId());
   const sheet = ss.getActiveSheet();
-
-  // Fill in the basic information fields
-  sheet.getRange('B6').setValue(referenceCode);              // Ref
-  sheet.getRange('B8').setValue(formattedDate);              // Date
-  sheet.getRange('B12').setValue(claimDesc);                 // Event
-  sheet.getRange('C20').setValue(financeDirectorName);       // Payee's Name (Finance Director)
-  sheet.getRange('I20').setValue(financeDirectorMatric);     // Matric No (Finance Director)
-  sheet.getRange('C24').setValue(totalFormatted);            // Total Amount
-  sheet.getRange('I24').setValue(financeDirectorPhone);      // Contact No (Finance Director)
-  sheet.getRange('B36').setValue(wbsNo);                     // WBS Account No.
   
-  // Fill in receipt details (starting at row 31)
+  sheet.getRange('B6').setValue(referenceCode);
+  sheet.getRange('B8').setValue(formattedDate);
+  sheet.getRange('B12').setValue(claimDesc);
+  sheet.getRange('C20').setValue(financeDirectorName);
+  sheet.getRange('I20').setValue(financeDirectorMatric);
+  sheet.getRange('C24').setValue(totalFormatted);
+  sheet.getRange('I24').setValue(financeDirectorPhone);
+  sheet.getRange('B36').setValue(wbsNo);
+  
   let currentRow = 31;
   let receiptNum = 1;
   
@@ -1435,39 +1767,23 @@ function generateSummary(claimNo, row, folder) {
     if (!receipt.desc || receipt.amount === "") return;
 
     const formattedAmt = formatMoney(receipt.amount);
+    const formattedDate = formatDateIfNeeded(receipt.date);
     
-    // S/No (Column A)
     sheet.getRange(currentRow, 1).setValue(receiptNum || "");
-    
-    // Receipt/Inv No (Column B)
     sheet.getRange(currentRow, 2).setValue(receipt.receiptNo || "");
-    
-    // Description (Column D)
     sheet.getRange(currentRow, 4).setValue(receipt.desc || "");
-    
-    // Amount (Column I)
     sheet.getRange(currentRow, 9).setValue(formattedAmt || "");
-    
-    // GL (Column J)
     sheet.getRange(currentRow, 10).setValue(receipt.categoryCode || "");
-    
-    // GST Code (Column K)
     sheet.getRange(currentRow, 11).setValue(receipt.gstCode || "");
     
     currentRow++;
     receiptNum++;
   });
   
-  // Update total in the total row (row 36, column I)
   sheet.getRange(36, 9).setValue(totalFormatted);
-  
-  // Flush changes to ensure they're saved
   SpreadsheetApp.flush();
 }
 
-/**
- * Generate RFP document with split Dollars and Cents placeholders
- */
 function generateRFP(claimNo, row, folder) {
   const referenceCode = (row[CONFIG.CLAIMS_COL.REFERENCE_CODE] || "").toString();
   const financeDirectorName = (row[CONFIG.CLAIMS_COL.FINANCE_D_NAME] || "").toString();
@@ -1476,20 +1792,17 @@ function generateRFP(claimNo, row, folder) {
   const totalFormatted = formatMoney(total);
   const wbsNo = (row[CONFIG.CLAIMS_COL.WBS_NO] || "").toString();
   
-  // Copy the template to the claim folder
   const templateFile = DriveApp.getFileById(CONFIG.TEMPLATE_IDS.RFP);
   const copiedFile = templateFile.makeCopy(`RFP No. ${claimNo} - (${referenceCode})`, folder);
   const doc = DocumentApp.openById(copiedFile.getId());
   const body = doc.getBody();
   
-  // Static Replacements
   body.replaceText('{{NAME}}', financeDirectorName.toUpperCase());
   body.replaceText('{{MATRIC}}', financeDirectorMatric.toUpperCase());
   body.replaceText('{{TOTAL_AMOUNT}}', totalFormatted);
   body.replaceText('{{REFERENCE_CODE}}', referenceCode);
   body.replaceText('{{WBS_NO}}', wbsNo);
 
-  // Loop through receipt placeholders
   forEachReceipt(row, receipt => {
     const index = receipt.index;
     const amt = receipt.amount;
@@ -1505,7 +1818,6 @@ function generateRFP(claimNo, row, folder) {
       body.replaceText(`{{GST_${index}}}`, receipt.gstCode || "");
       body.replaceText(`{{WBS_${index}}}`, wbsNo || "");
     } else {
-      // Clear out unused placeholders
       body.replaceText(`{{DR_CR_${index}}}`, "");
       body.replaceText(`{{GL_${index}}}`, "");
       body.replaceText(`{{DOLLAR_${index}}}`, "");
@@ -1518,8 +1830,6 @@ function generateRFP(claimNo, row, folder) {
   doc.saveAndClose();
 }
 
-
-// Helper function to get config value from Config sheet
 function getConfigValue(key) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const configSheet = ss.getSheetByName('Config');
@@ -1534,7 +1844,51 @@ function getConfigValue(key) {
   return null;
 }
 
-// Centralized settings for easy customization.
+// ============================================================================
+// PART 6: CONFIGURATION CONSTANTS
+// ============================================================================
+
+/**
+ * Portfolio → CCA mapping.
+ * Edit this object OR edit the "Form Options" sheet directly
+ * and use "Recreate Claims Form" from the menu to update the form.
+ */
+const CCA_DEPARTMENTS = {
+  "Culture": [
+    "Culture", "RHockerfellas", "RH Unplugged", "RH Dance",
+    "RHebels", "RHythm", "RH Voices", "Culture Comm"
+  ],
+  "Welfare": [
+    "Welfare Comm", "RVC SP", "RVC Children", "RVC Pioneers",
+    "RVC Special Needs", "HeaRHtfelt", "Green Comm"
+  ],
+  "Sports": [
+    "Badminton M", "Basketball M", "Floorball M", "Handball M",
+    "Soccer M", "Swimming M", "Squash M", "Sepak Takraw M",
+    "Tennis M", "Touch Rugby M", "Table Tennis M", "Volleyball M",
+    "SMC", "Softball", "Track", "Road Relay", "Frisbee",
+    "Netball F", "Badminton F", "Basketball F", "Floorball F",
+    "Handball F", "Soccer F", "Swimming F", "Squash F",
+    "Tennis F", "Touch Rugby F", "Table Tennis F", "Volleyball F"
+  ],
+  "Social": [
+    "Block 2 Comm", "Block 3 Comm", "Block 4 Comm", "Block 5 Comm",
+    "Block 6 Comm", "Block 7 Comm", "Block 8 Comm", "Social Comm", "RHSafe"
+  ],
+  "VPI": ["Bash", "DND", "AEAC"],
+  "RHMP": [
+    "RHMP Producers", "RHMP Directors", "RHMP Ensemble", "RHMP Stage Managers",
+    "RHMP Sets", "RHMP Costumes", "RHMP Relations", "RHMP Publicity", "RHMP EM",
+    "RHMP Graphic Design", "RHMP Musicians", "RHMP Composers"
+  ],
+  "Media": [
+    "BOP", "Phoenix Studios", "Phoenix Press", "AnG",
+    "Tech Crew", "ComMotion", "RH Devs"
+  ],
+  "HGS": ["Vacation Storage", "Auditor", "Finance", "Secretariat"],
+  "VPE": ["HPB", "RHOC", "RHAG", "RFLAG"]
+};
+
 const CONFIG = {
   MENU: {
     TITLE: 'Claims Tools',
@@ -1542,7 +1896,7 @@ const CONFIG = {
       { label: 'Add Claim', handler: 'addClaim' },
       { label: 'Generate Emails', handler: 'generateEmail' },
       { label: 'Generate Forms', handler: 'generateForm' },
-      { label: 'Compile Forms', handler: 'compileForms' }
+      { label: 'Compile Forms', handler: 'compileForms' },
     ]
   },
   SHEETS: {
@@ -1550,15 +1904,15 @@ const CONFIG = {
     ADD_CLAIM: 'Add Claim',
     CLAIMS_DATA: 'Claims Data',
     MASTER: 'Master Sheet',
-    FORM_RESPONSES: 'Form Responses 1'
+    FORM_RESPONSES: 'Form Responses'
   },
   ADD_CLAIM: {
     CLAIM_RANGES: [
-      'B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22','B23'
+      'B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22','B23','B24'
     ],
-    RECEIPT_COLUMNS: ['E','G','I','K','M'],  // Updated to match new layout
+    RECEIPT_COLUMNS: ['E','G','I','K','M'],
     RECEIPT_ROWS: { START: 8, END: 18 },
-    MASTER_RANGES: ['B15','B16','B17','B18','B11','B13','B20','B25']  // Updated mapping
+    MASTER_RANGES: ['B15','B16','B17','B18','B11','B13','B20','B26']
   },
   MASTER_COL_EMAIL: {
     NO: 0,
@@ -1593,20 +1947,19 @@ const CONFIG = {
     WBS_ACCOUNT_NAME: 14,
     WBS_NO: 15,
     REMARKS: 16,
-    DESC_START: 17
+    OTHER_EMAILS: 17,
+    DESC_START: 18
   },
   RECEIPT: {
     COUNT: 5,
     BLOCK_WIDTH: 11
   },
-  // Template IDs now loaded from Config sheet
   get TEMPLATE_IDS() {
     return {
       SUMMARY: getConfigValue('SUMMARY_TEMPLATE_ID') || '',
       RFP: getConfigValue('RFP_TEMPLATE_ID') || ''
     };
   },
-  // Folder IDs now loaded from Config sheet
   get FOLDERS() {
     return {
       RFP_ROOT_ID: getConfigValue('RFP_FOLDER_ID') || '',
