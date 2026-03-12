@@ -97,7 +97,6 @@ The Google Form dropdowns do **not** update automatically when the CCA list chan
 ## Notes
 
 - Each claim reference code follows the format `AY-PORTFOLIO-CCA-001`
-- Up to **5 receipts** are supported per claim
 - The system tracks each receipt's description, category, GST, company, date, receipt number, amount, softcopy, and bank screenshot
 - The **Claims Data** sheet is hidden but stores all structured claim data
 - `Claim Data Template` is also hidden and is used to reset the Add Claim sheet after each submission
