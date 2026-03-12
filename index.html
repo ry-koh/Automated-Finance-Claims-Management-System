@@ -354,12 +354,42 @@
 
     .cmp-before {
       border-right: 1.5px solid #e0dbd4 !important;
+      background: #fff9f9;
+    }
+
+    .cmp-before::before {
+      content: "✗ Before";
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      font-weight: 700;
+      color: #e53e3e;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .cmp-after::before {
+      content: "✓ After";
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      font-weight: 700;
+      color: #15803d;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
     }
 
     .cmp-header .cmp-label,
     .cmp-header > div {
       padding: 8px 10px;
       font-size: 9px;
+    }
+
+    /* Hide the header row on mobile since we use ::before labels */
+    .cmp-header {
+      display: none !important;
     }
     .legend {
       grid-template-columns: 1fr 1fr !important;
