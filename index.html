@@ -22,13 +22,11 @@
     --label-bg:     #f5f2ee;
     --shadow:       #1a1a1a;
 
-    /* Role colours */
     --treasurer-bg: #dbeafe;
     --liaison-bg:   #dcfce7;
     --processor-bg: #fef3c7;
     --office-bg:    #fce7f3;
 
-    /* Callout colours */
     --blue-bg:      #dbeafe;
     --blue-border:  #93c5fd;
     --blue-text:    #1d4ed8;
@@ -40,18 +38,15 @@
     --amber-text:   #b45309;
     --wait-bg:      #fffbeb;
 
-    /* Comparison table */
     --cmp-label-bg: #f5f2ee;
     --cmp-before-bg:#fff9f9;
     --cmp-after-bg: #f0fdf4;
 
-    /* Dark step */
     --dark-bg:      #1a1a1a;
     --dark-text:    #f0ede8;
     --dark-muted:   #888;
     --dark-border:  #333;
 
-    /* Footer & GitHub */
     --github-btn-bg:     #1a1a1a;
     --github-btn-text:   #f0ede8;
     --github-btn-shadow: #555;
@@ -59,67 +54,70 @@
     --footer-text:       #aaa;
     --footer-name:       #1a1a1a;
 
-    /* Group wrapper & parallel */
     --group-wrapper-bg:  #f0fdf4;
     --parallel-bg:       rgba(254,243,199,0.3);
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg:           #141414;
-      --surface:      #1e1e1e;
-      --border:       #555;
-      --border-soft:  #333;
-      --border-mid:   #444;
-      --text:         #f0ede8;
-      --text-muted:   #bbb;
-      --text-faint:   #888;
-      --text-xfaint:  #555;
-      --connector-bg: #1e1e1e;
-      --label-bg:     #252525;
-      --shadow:       #000;
+      --bg:               #141414;
+      --surface:          #1e1e1e;
+      --border:           #555;
+      --border-soft:      #333;
+      --border-mid:       #444;
+      --text:             #f0ede8;
+      --text-muted:       #bbb;
+      --text-faint:       #888;
+      --text-xfaint:      #555;
+      --connector-bg:     #1e1e1e;
+      --label-bg:         #252525;
+      --shadow:           #000;
 
-      /* Role colours — darkened */
-      --treasurer-bg: #1e3a5f;
-      --liaison-bg:   #14532d;
-      --processor-bg: #451a03;
-      --office-bg:    #500724;
+      --treasurer-bg:     #1e3a5f;
+      --liaison-bg:       #14532d;
+      --processor-bg:     #451a03;
+      --office-bg:        #500724;
 
-      /* Callout colours */
-      --blue-bg:      #1e3a5f;
-      --blue-border:  #1d4ed8;
-      --blue-text:    #93c5fd;
-      --green-bg:     #14532d;
-      --green-border: #15803d;
-      --green-text:   #86efac;
-      --amber-bg:     #451a03;
-      --amber-border: #b45309;
-      --amber-text:   #fcd34d;
-      --wait-bg:      #2d1f00;
+      --blue-bg:          #1e3a5f;
+      --blue-border:      #1d4ed8;
+      --blue-text:        #93c5fd;
+      --green-bg:         #14532d;
+      --green-border:     #15803d;
+      --green-text:       #86efac;
+      --amber-bg:         #451a03;
+      --amber-border:     #b45309;
+      --amber-text:       #fcd34d;
+      --wait-bg:          #2d1f00;
 
-      /* Comparison table */
-      --cmp-label-bg: #252525;
-      --cmp-before-bg:#2a1a1a;
-      --cmp-after-bg: #0f2a1a;
+      --cmp-label-bg:     #252525;
+      --cmp-before-bg:    #2a1a1a;
+      --cmp-after-bg:     #0f2a1a;
 
-      /* Dark step */
-      --dark-bg:      #2a2a2a;
-      --dark-text:    #f0ede8;
-      --dark-muted:   #777;
-      --dark-border:  #444;
+      --dark-bg:          #2a2a2a;
+      --dark-text:        #f0ede8;
+      --dark-muted:       #777;
+      --dark-border:      #444;
 
-      /* Footer & GitHub */
-      --github-btn-bg:     #2a2a2a;
-      --github-btn-text:   #f0ede8;
-      --github-btn-shadow: #888;
-      --github-btn-border: #888;
-      --footer-text:       #94a3b8;
-      --footer-name:       #e2e8f0;
+      --github-btn-bg:    #2a2a2a;
+      --github-btn-text:  #f0ede8;
+      --github-btn-shadow:#888;
+      --github-btn-border:#888;
+      --footer-text:      #94a3b8;
+      --footer-name:      #e2e8f0;
 
-      /* Group wrapper & parallel */
-      --group-wrapper-bg:  #0f2a1a;
-      --parallel-bg:       rgba(69,26,3,0.3);
+      --group-wrapper-bg: #0f2a1a;
+      --parallel-bg:      rgba(69,26,3,0.3);
     }
+
+    /* Elements with hardcoded or inline styles that need dark overrides */
+    .group-wrapper          { background: #0f2a1a !important; border-color: #15803d !important; }
+    .group-label            { background: #14532d !important; border-color: #15803d !important; color: #f0ede8 !important; }
+    .tg-btn                 { background: #1a7aaa !important; border-color: #229ED9 !important; box-shadow: 3px 3px 0 #229ED9 !important; }
+    .cmp-header-before      { background: #2a2a2a !important; color: #f0ede8 !important; }
+    .cmp-header-after       { background: #14532d !important; color: #f0ede8 !important; border-color: #15803d !important; }
+    .connector-label        { background: #141414 !important; }
+    .connector.wait .connector-label { background: #2d1f00 !important; }
+    .template-box           { background: #252525 !important; border-color: #444 !important; }
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -150,7 +148,6 @@
     color: var(--text);
   }
 
-  /* ── FLOW CONTAINER ── */
   .flow {
     max-width: 760px;
     margin: 0 auto;
@@ -160,7 +157,6 @@
     gap: 0;
   }
 
-  /* ── STEP CARD ── */
   .step {
     display: grid;
     grid-template-columns: 80px 1fr;
@@ -182,10 +178,7 @@
     border-right: 2px solid var(--border);
   }
 
-  .step-emoji {
-    font-size: 26px;
-    line-height: 1;
-  }
+  .step-emoji { font-size: 26px; line-height: 1; }
 
   .step-role {
     font-family: 'DM Mono', monospace;
@@ -213,38 +206,21 @@
     letter-spacing: 0.1em;
   }
 
-  .step-title {
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.3;
-    color: var(--text);
-  }
+  .step-title { font-size: 16px; font-weight: 700; line-height: 1.3; color: var(--text); }
+  .step-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; font-style: italic; }
 
-  .step-desc {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    line-height: 1.5;
-    font-style: italic;
-  }
-
-  /* Colour variants */
   .step.treasurer .step-who { background: var(--treasurer-bg); }
   .step.liaison   .step-who { background: var(--liaison-bg); }
   .step.processor .step-who { background: var(--processor-bg); }
   .step.office    .step-who { background: var(--office-bg); }
 
-  .step.key {
-    background: #1a1a1a;
-    border-color: var(--text);
-  }
-
+  .step.key { background: #1a1a1a; border-color: var(--text); }
   .step.key .step-body { background: var(--dark-bg); }
   .step.key .step-num { color: var(--text-muted); }
   .step.key .step-title { color: var(--dark-text); }
   .step.key .step-desc { color: var(--dark-muted); }
   .step.key .step-who { border-right-color: var(--dark-border); }
 
-  /* ── CONNECTOR ── */
   .connector {
     display: flex;
     align-items: center;
@@ -283,22 +259,7 @@
     color: var(--amber-text);
   }
 
-  /* ── PARALLEL BLOCK ── */
-  .parallel-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .parallel-label {
-    text-align: center;
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    color: var(--text-xfaint);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
+  .parallel-wrapper { display: flex; flex-direction: column; gap: 0; }
 
   .parallel {
     display: grid;
@@ -309,7 +270,6 @@
 
   .parallel .step { box-shadow: 3px 3px 0 var(--shadow); }
 
-  /* ── FINANCE TEAM GROUP ── */
   .group-wrapper {
     display: flex;
     flex-direction: column;
@@ -337,7 +297,6 @@
     border-radius: 20px;
   }
 
-  /* ── LEGEND ── */
   .legend {
     max-width: 760px;
     margin: 0 auto 40px;
@@ -368,7 +327,6 @@
   .legend-processor { background: var(--processor-bg); }
   .legend-office    { background: var(--office-bg); }
 
-  /* ── TEMPLATE BOX ── */
   .template-box {
     margin-top: 8px;
     background: var(--label-bg);
@@ -395,9 +353,7 @@
     letter-spacing: 0;
   }
 
-  .template-box .field-divider {
-    border-bottom: 1.5px solid var(--border-mid);
-  }
+  .template-box .field-divider { border-bottom: 1.5px solid var(--border-mid); }
 
   .template-box .receipts-note {
     margin-top: 2px;
@@ -407,7 +363,6 @@
     font-size: 11px;
   }
 
-  /* ── CALLOUT BOXES ── */
   .callout {
     margin-top: 10px;
     border-radius: 6px;
@@ -418,18 +373,8 @@
     border-style: solid;
   }
 
-  .callout-blue {
-    background: var(--blue-bg);
-    border-color: var(--blue-border);
-    color: var(--blue-text);
-  }
-
-  .callout-green {
-    background: var(--green-bg);
-    border-color: var(--green-border);
-    color: var(--green-text);
-  }
-
+  .callout-blue  { background: var(--blue-bg);  border-color: var(--blue-border);  color: var(--blue-text); }
+  .callout-green { background: var(--green-bg); border-color: var(--green-border); color: var(--green-text); }
   .callout-amber {
     margin-top: 8px;
     background: var(--amber-bg);
@@ -439,11 +384,7 @@
     line-height: 1.5;
   }
 
-  /* ── COMPARISON TABLE ── */
-  .cmp-row {
-    display: grid;
-    grid-template-columns: 160px 1fr 1fr;
-  }
+  .cmp-row { display: grid; grid-template-columns: 160px 1fr 1fr; }
 
   .cmp-label {
     padding: 10px 14px;
@@ -475,11 +416,8 @@
     background: var(--cmp-after-bg);
   }
 
-  .cmp-row:not(:last-child) {
-    border-bottom: 1.5px solid var(--border-soft);
-  }
+  .cmp-row:not(:last-child) { border-bottom: 1.5px solid var(--border-soft); }
 
-  /* ── CMP HEADER ── */
   .cmp-header-before {
     background: var(--dark-bg);
     color: var(--dark-text);
@@ -511,13 +449,50 @@
     border: 2px solid #1565a0;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .tg-btn {
-      background: #1a7aaa;
-      color: #fff;
-      box-shadow: 3px 3px 0 #229ED9;
-      border: 2px solid #229ED9;
-    }
+  /* ── CLOSING STATEMENT ── */
+  .closing-statement {
+    max-width: 760px;
+    margin: 48px auto 0;
+    padding: 24px 28px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 4px 4px 0 var(--shadow);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .closing-statement .cs-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .closing-statement .cs-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .closing-statement .cs-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .closing-statement .cs-text {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+
+  .closing-statement .cs-text strong {
+    color: var(--text);
+    font-weight: 700;
   }
 
   .fade-in {
@@ -532,38 +507,18 @@
   }
 
   @media (max-width: 600px) {
-    body {
-      padding: 24px 12px 48px;
-    }
-
-    h2 {
-      font-size: 17px;
-      margin-bottom: 6px;
-    }
-
-    body > p:first-of-type {
-      font-size: 11px;
-    }
-
-    .before-after {
-      grid-template-columns: 1fr !important;
-    }
-
-    .step {
-      grid-template-columns: 54px 1fr;
-    }
-
+    body { padding: 24px 12px 48px; }
+    h2 { font-size: 17px; margin-bottom: 6px; }
+    body > p:first-of-type { font-size: 11px; }
+    .before-after { grid-template-columns: 1fr !important; }
+    .step { grid-template-columns: 54px 1fr; }
     .step-emoji { font-size: 18px; }
     .step-role { font-size: 7px; }
     .step-body { padding: 10px 10px; }
     .step-title { font-size: 13px; }
     .step-desc { font-size: 11px; }
     .step-num { font-size: 9px; }
-
-    .parallel {
-      grid-template-columns: 1fr !important;
-    }
-
+    .parallel { grid-template-columns: 1fr !important; }
     .parallel .step + .step::before {
       content: "⚡ at the same time";
       display: block;
@@ -575,112 +530,30 @@
       text-transform: uppercase;
       margin: 6px 0;
     }
-
-    .group-wrapper {
-      padding: 16px 8px 12px;
-    }
-
-    .connector-label {
-      font-size: 8px;
-      padding: 2px 8px;
-    }
-
-    .template-box {
-      font-size: 10px !important;
-      padding: 8px 10px !important;
-      line-height: 1.8 !important;
-      word-break: break-word;
-    }
-
-    .cmp-row {
-      grid-template-columns: 1fr 1fr !important;
-    }
-
-    .cmp-label {
-      grid-column: 1 / -1;
-      border-right: none !important;
-      border-bottom: 1px solid var(--border-soft);
-      padding: 6px 10px;
-      font-size: 8px;
-    }
-
-    .cmp-before, .cmp-after {
-      font-size: 10.5px;
-      padding: 8px 10px;
-    }
-
-    .cmp-before {
-      border-right: 1.5px solid var(--border-soft) !important;
-    }
-
-    .cmp-before::before {
-      content: "✗ Before";
-      display: block;
-      font-family: 'DM Mono', monospace;
-      font-size: 8px;
-      font-weight: 700;
-      color: #e53e3e;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .cmp-after::before {
-      content: "✓ After";
-      display: block;
-      font-family: 'DM Mono', monospace;
-      font-size: 8px;
-      font-weight: 700;
-      color: var(--green-text);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .cmp-header {
-      display: none !important;
-    }
-
-    .legend {
-      grid-template-columns: 1fr 1fr !important;
-      gap: 6px;
-    }
-
-    .legend-item {
-      font-size: 9px !important;
-      padding: 6px 8px !important;
-      min-width: 0;
-      word-break: break-word;
-    }
-
-    .legend-item span:last-child {
-      font-size: 7.5px !important;
-      line-height: 1.3;
-    }
-
-    .flow-divider {
-      font-size: 9px;
-    }
-
-    .github-btn {
-      font-size: 10px !important;
-      padding: 8px 14px !important;
-    }
-
-    body > div:last-of-type {
-      font-size: 9px;
-    }
-
+    .group-wrapper { padding: 16px 8px 12px; }
+    .connector-label { font-size: 8px; padding: 2px 8px; }
+    .template-box { font-size: 10px !important; padding: 8px 10px !important; line-height: 1.8 !important; word-break: break-word; }
+    .cmp-row { grid-template-columns: 1fr 1fr !important; }
+    .cmp-label { grid-column: 1 / -1; border-right: none !important; border-bottom: 1px solid var(--border-soft); padding: 6px 10px; font-size: 8px; }
+    .cmp-before, .cmp-after { font-size: 10.5px; padding: 8px 10px; }
+    .cmp-before { border-right: 1.5px solid var(--border-soft) !important; }
+    .cmp-before::before { content: "✗ Before"; display: block; font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; color: #e53e3e; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+    .cmp-after::before { content: "✓ After"; display: block; font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; color: var(--green-text); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+    .cmp-header { display: none !important; }
+    .legend { grid-template-columns: 1fr 1fr !important; gap: 6px; }
+    .legend-item { font-size: 9px !important; padding: 6px 8px !important; min-width: 0; word-break: break-word; }
+    .legend-item span:last-child { font-size: 7.5px !important; line-height: 1.3; }
+    .flow-divider { font-size: 9px; }
+    .github-btn { font-size: 10px !important; padding: 8px 14px !important; }
+    body > div:last-of-type { font-size: 9px; }
     .step.treasurer { border-left: 4px solid #93c5fd; }
     .step.liaison   { border-left: 4px solid #86efac; }
     .step.processor { border-left: 4px solid #fcd34d; }
     .step.office    { border-left: 4px solid #f9a8d4; }
-
-    .step-body > div {
-      font-size: 11px !important;
-      padding: 6px 8px !important;
-      word-break: break-word;
-    }
+    .step-body > div { font-size: 11px !important; padding: 6px 8px !important; word-break: break-word; }
+    .closing-statement { padding: 16px; gap: 12px; }
+    .closing-statement .cs-icon { font-size: 22px; }
+    .closing-statement .cs-text { font-size: 12px; }
   }
 </style>
 </head>
@@ -714,49 +587,36 @@
 <!-- COMPARISON TABLE -->
 <div class="before-after" style="max-width:760px;margin:0 auto 48px;">
   <div style="border:2px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 var(--shadow);">
-
-    <!-- Header row -->
     <div class="cmp-row cmp-header" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label" style="border-bottom:2px solid var(--border);"></div>
       <div class="cmp-header-before">✗ &nbsp;Before</div>
       <div class="cmp-header-after">✓ &nbsp;After</div>
     </div>
-
-    <!-- Row 1 -->
     <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Claim submission</div>
       <div class="cmp-before">Treasurer writes their own email — errors, inconsistent formatting</div>
       <div class="cmp-after">Treasurer Telegrams details to Liaison — no email writing needed</div>
     </div>
-
-    <!-- Row 2 -->
     <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Receipt limit</div>
       <div class="cmp-before">Max 5 receipts per email — multiple emails for one event</div>
       <div class="cmp-after">No limit — send all receipts for an entire event at once</div>
     </div>
-
-    <!-- Row 3 -->
     <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Error checking</div>
       <div class="cmp-before">Errors caught at LOA stage or after submission — process restarts from Step 1<br><span style="font-size:10.5px;color:#f87171;margin-top:4px;display:inline-block;">⏱ If the error is not caught and submitted to the hall office, it will be rejected — and it can take months to get reimbursed</span></div>
       <div class="cmp-after">Liaison catches errors before submission — issues fixed early</div>
     </div>
-
-    <!-- Row 4 -->
     <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Claim documents</div>
       <div class="cmp-before">LOA, Summary, and RFP all filled in manually</div>
       <div class="cmp-after">Auto-generated from the form — minimal manual form filling</div>
     </div>
-
-    <!-- Row 5 -->
     <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Treasurer email</div>
       <div class="cmp-before">Treasurer manually crafts the email themselves — prone to errors and inconsistent formatting</div>
       <div class="cmp-after">Auto-generated with exact wording — no room for mistakes</div>
     </div>
-
   </div>
 </div>
 
@@ -814,8 +674,6 @@
   <!-- FINANCE TEAM GROUP -->
   <div class="group-wrapper">
     <div class="group-label">📋 Finance Team</div>
-
-    <!-- STEP 2 -->
     <div class="step liaison">
       <div class="step-who">
         <div class="step-emoji">🔗</div>
@@ -827,10 +685,7 @@
         <div class="step-desc">Go back and forth with the Treasurer until everything checks out, then fill in the Google Form on their behalf.</div>
       </div>
     </div>
-
     <div class="connector then"><span class="connector-label">form submitted →</span></div>
-
-    <!-- STEP 3 -->
     <div class="step processor">
       <div class="step-who">
         <div class="step-emoji">⚙️</div>
@@ -842,16 +697,10 @@
         <div class="step-desc">Check the form response for any issues. If something looks wrong, flag it before any documents are generated.</div>
       </div>
     </div>
-
     <div class="connector then"><span class="connector-label">all looks good →</span></div>
-
-    <!-- PARALLEL -->
     <div style="margin-top:8px;border:1.5px dashed var(--amber-border);border-radius:10px;padding:20px 12px 14px;position:relative;background:var(--parallel-bg);">
       <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--amber-bg);color:var(--amber-text);border:1.5px solid var(--amber-border);font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">⚡ done at the same time</div>
-
       <div class="parallel-inner" style="gap:12px;">
-
-        <!-- 4A -->
         <div class="step processor">
           <div class="step-who">
             <div class="step-emoji">⚙️</div>
@@ -863,8 +712,6 @@
             <div class="step-desc">One click sends a ready-made email to the Treasurer — telling them exactly what to send and attach.</div>
           </div>
         </div>
-
-        <!-- 4B -->
         <div class="step processor">
           <div class="step-who">
             <div class="step-emoji">⚙️</div>
@@ -877,20 +724,12 @@
             <div class="callout callout-amber">⏳ On hold until the Treasurer sends the email to RH Finance email.</div>
           </div>
         </div>
-
       </div>
-
       <style>
-        @media (min-width: 601px) {
-          .parallel-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        }
-        @media (max-width: 600px) {
-          .parallel-inner { display: flex; flex-direction: column; gap: 10px; }
-        }
+        @media (min-width: 601px) { .parallel-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } }
+        @media (max-width: 600px) { .parallel-inner { display: flex; flex-direction: column; gap: 10px; } }
       </style>
-
     </div>
-
   </div>
 
   <div class="connector wait"><span class="connector-label">⏳ waiting for treasurer</span></div>
@@ -916,8 +755,6 @@
   <!-- FINANCE TEAM GROUP 2 -->
   <div class="group-wrapper">
     <div class="group-label">📋 Finance Team (after treasurer responds)</div>
-
-    <!-- STEP 6 -->
     <div class="step processor">
       <div class="step-who">
         <div class="step-emoji">⚙️</div>
@@ -948,8 +785,19 @@
 
 </div>
 
+<!-- CLOSING STATEMENT -->
+<div class="closing-statement fade-in">
+  <div class="cs-icon">🔁</div>
+  <div class="cs-body">
+    <div class="cs-label">Built to last</div>
+    <div class="cs-text">
+      This isn't just automation for this year. <strong>The entire system — the Google Form, the claim documents, the email templates, and the folder structure — is set up to recreate itself automatically</strong> for every future Finance team, year after year. No manual setup. No starting from scratch. The next team inherits a fully working system on day one. But none of this goes live without the mandate to implement it — <strong>and that starts with your vote.</strong>
+    </div>
+  </div>
+</div>
+
 <!-- GITHUB LINK -->
-<div id="github-section" style="max-width:760px;margin:48px auto 0;padding-top:32px;border-top:1.5px solid var(--border-mid);text-align:center;">
+<div id="github-section" style="max-width:760px;margin:28px auto 0;padding-top:32px;border-top:1.5px solid var(--border-mid);text-align:center;">
   <div style="display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;">
     <a href="https://github.com/ry-koh/Automated-Finance-Claims-Management-System" target="_blank" class="github-btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:var(--github-btn-bg);color:var(--github-btn-text);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;box-shadow:3px 3px 0 var(--github-btn-shadow);border:2px solid var(--github-btn-border);">
       <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -977,7 +825,7 @@
     });
   }, { threshold: 0.1 });
 
-  document.querySelectorAll('.step, .group-wrapper, .before-after, .connector, .flow-divider, .legend, #github-section').forEach(el => {
+  document.querySelectorAll('.step, .group-wrapper, .before-after, .connector, .flow-divider, .legend, #github-section, .closing-statement').forEach(el => {
     el.classList.add('fade-in');
     observer.observe(el);
   });
