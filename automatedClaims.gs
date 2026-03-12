@@ -108,6 +108,7 @@ function createFormOptionsSheet(ss) {
   // Add note for users
   sheet.getRange('A1').setNote('Add or remove Portfolio/CCA pairs here. These will be used in the Google Form dropdowns. Re-run "Create Claims Form" from the Claims Tools menu to update the form.');
 
+  sheet.hideSheet();
   return sheet;
 }
 
