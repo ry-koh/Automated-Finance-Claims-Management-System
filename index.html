@@ -354,6 +354,19 @@
     .step.liaison   { border-left: 4px solid #86efac; }
     .step.processor { border-left: 4px solid #fcd34d; }
     .step.office    { border-left: 4px solid #f9a8d4; }
+
+    /* Parallel wrapper on mobile */
+    .parallel-wrapper,
+    .parallel ~ div {
+      padding: 14px 8px 10px;
+    }
+
+    /* All inline callout boxes inside step-body */
+    .step-body > div {
+      font-size: 11px !important;
+      padding: 6px 8px !important;
+      word-break: break-word;
+    }
   }
 </style>
 </head>
@@ -503,8 +516,8 @@
     <div class="connector then"><span class="connector-label">all looks good →</span></div>
 
     <!-- PARALLEL -->
-    <div style="margin-top:8px;border:1.5px dashed #fcd34d;border-radius:10px;padding:16px 14px 14px;position:relative;background:rgba(254,243,199,0.3);">
-      <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">⚡ Form Processor does both at the same time</div>
+    <div style="margin-top:8px;border:1.5px dashed #fcd34d;border-radius:10px;padding:16px 8px 12px;position:relative;background:rgba(254,243,199,0.3);overflow:hidden;">
+      <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;max-width:90%;text-align:center;">⚡ Form Processor does both at the same time</div>
       <div class="parallel">
 
         <div class="step processor">
@@ -528,7 +541,7 @@
             <div class="step-num">STEP 4B</div>
             <div class="step-title">Claim documents are automatically generated</div>
             <div class="step-desc">The LOA, Summary, and RFP are all created automatically from the form data — no manual filling, no copy-pasting. Files are saved directly to Google Drive.</div>
-            <div style="margin-top:8px;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:6px;padding:7px 12px;font-size:11.5px;color:#b45309;line-height:1.6;">⏳ Waiting on the Treasurer's email (Step 5) and their screenshot before Step 6 can proceed.</div>
+            <div style="margin-top:8px;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:6px;padding:7px 10px;font-size:11px;color:#b45309;line-height:1.5;word-break:break-word;">⏳ Waiting on the Treasurer's email (Step 5) and their screenshot before Step 6 can proceed.</div>
           </div>
         </div>
 
