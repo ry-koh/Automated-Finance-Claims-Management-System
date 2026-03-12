@@ -58,16 +58,17 @@ Once set up, a **Claims Tools** menu appears in the spreadsheet:
 1. Create a new Google Sheet
 2. Go to **Extensions > Apps Script**
 3. Delete all default code, paste the entire script, and save
-4. Run `setupClaimsSystem` (click **Run** in the toolbar)
-5. Grant permissions when prompted
-6. Fill in the **Config** sheet:
+4. Add **Drive API v3** in **Services** (on the left panel)
+5. Run `setupClaimsSystem` (click **Run** in the toolbar)
+6. Grant permissions when prompted *(on the Google Sheet page, remember to press Yes to start file creation)*
+7. Fill in the **Config** sheet:
    - Academic year, Finance D name, matric, and phone number
    - Template IDs for your Summary (Google Sheets) and RFP (Google Docs) templates
-7. Enable the Drive API: **Services (+) > Drive API v3**
-8. Open the generated Google Form and manually add **2 file upload questions per receipt section** (10 total), placed after each *Amount* field:
+8. Open the generated Google Form and manually add **2 file upload questions per receipt section** (10 total, set max files to 10), placed after each *Amount* field:
    - `Receipt Softcopy/Image [N]`
    - `Bank Transaction Screenshot [N]`
-9. Share the form link (saved in Config) with claimers
+9. Hide the **Config** sheet
+10. Reload the spreadsheet for **Claims Tools** to appear in the menu
 
 ---
 
