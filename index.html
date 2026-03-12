@@ -3,17 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>Claims Workflow</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+  :root {
+    --bg:           #f0ede8;
+    --surface:      #fff;
+    --border:       #1a1a1a;
+    --border-soft:  #e0dbd4;
+    --border-mid:   #c8c3bb;
+    --text:         #1a1a1a;
+    --text-muted:   #666;
+    --text-faint:   #aaa;
+    --text-xfaint:  #bbb;
+    --connector-bg: #f0ede8;
+    --label-bg:     #f5f2ee;
+    --shadow:       #1a1a1a;
+
+    /* Role colours */
+    --treasurer-bg: #dbeafe;
+    --liaison-bg:   #dcfce7;
+    --processor-bg: #fef3c7;
+    --office-bg:    #fce7f3;
+
+    /* Callout colours */
+    --blue-bg:      #dbeafe;
+    --blue-border:  #93c5fd;
+    --blue-text:    #1d4ed8;
+    --green-bg:     #dcfce7;
+    --green-border: #86efac;
+    --green-text:   #15803d;
+    --amber-bg:     #fef3c7;
+    --amber-border: #fcd34d;
+    --amber-text:   #b45309;
+    --wait-bg:      #fffbeb;
+
+    /* Comparison table */
+    --cmp-label-bg: #f5f2ee;
+    --cmp-before-bg:#fff9f9;
+    --cmp-after-bg: #f0fdf4;
+
+    /* Dark step */
+    --dark-bg:      #1a1a1a;
+    --dark-text:    #f0ede8;
+    --dark-muted:   #888;
+    --dark-border:  #333;
+
+    /* Footer & GitHub */
+    --github-btn-bg:     #1a1a1a;
+    --github-btn-text:   #f0ede8;
+    --github-btn-shadow: #555;
+    --github-btn-border: #1a1a1a;
+    --footer-text:       #aaa;
+    --footer-name:       #1a1a1a;
+
+    /* Group wrapper & parallel */
+    --group-wrapper-bg:  #f0fdf4;
+    --parallel-bg:       rgba(254,243,199,0.3);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:           #141414;
+      --surface:      #1e1e1e;
+      --border:       #555;
+      --border-soft:  #333;
+      --border-mid:   #444;
+      --text:         #f0ede8;
+      --text-muted:   #bbb;
+      --text-faint:   #888;
+      --text-xfaint:  #555;
+      --connector-bg: #1e1e1e;
+      --label-bg:     #252525;
+      --shadow:       #000;
+
+      /* Role colours — darkened */
+      --treasurer-bg: #1e3a5f;
+      --liaison-bg:   #14532d;
+      --processor-bg: #451a03;
+      --office-bg:    #500724;
+
+      /* Callout colours */
+      --blue-bg:      #1e3a5f;
+      --blue-border:  #1d4ed8;
+      --blue-text:    #93c5fd;
+      --green-bg:     #14532d;
+      --green-border: #15803d;
+      --green-text:   #86efac;
+      --amber-bg:     #451a03;
+      --amber-border: #b45309;
+      --amber-text:   #fcd34d;
+      --wait-bg:      #2d1f00;
+
+      /* Comparison table */
+      --cmp-label-bg: #252525;
+      --cmp-before-bg:#2a1a1a;
+      --cmp-after-bg: #0f2a1a;
+
+      /* Dark step */
+      --dark-bg:      #2a2a2a;
+      --dark-text:    #f0ede8;
+      --dark-muted:   #777;
+      --dark-border:  #444;
+
+      /* Footer & GitHub */
+      --github-btn-bg:     #2a2a2a;
+      --github-btn-text:   #f0ede8;
+      --github-btn-shadow: #888;
+      --github-btn-border: #888;
+      --footer-text:       #94a3b8;
+      --footer-name:       #e2e8f0;
+
+      /* Group wrapper & parallel */
+      --group-wrapper-bg:  #0f2a1a;
+      --parallel-bg:       rgba(69,26,3,0.3);
+    }
+  }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: 'DM Sans', sans-serif;
-    background: #f0ede8;
+    background: var(--bg);
     padding: 48px 24px 72px;
-    color: #1a1a1a;
+    color: var(--text);
   }
 
   h1 {
@@ -22,7 +137,7 @@
     font-weight: 500;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: #999;
+    color: var(--text-faint);
     text-align: center;
     margin-bottom: 8px;
   }
@@ -32,7 +147,7 @@
     font-weight: 700;
     text-align: center;
     margin-bottom: 48px;
-    color: #1a1a1a;
+    color: var(--text);
   }
 
   /* ── FLOW CONTAINER ── */
@@ -50,11 +165,11 @@
     display: grid;
     grid-template-columns: 80px 1fr;
     gap: 0;
-    background: #fff;
-    border: 2px solid #1a1a1a;
+    background: var(--surface);
+    border: 2px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 4px 4px 0 #1a1a1a;
+    box-shadow: 4px 4px 0 var(--shadow);
   }
 
   .step-who {
@@ -64,7 +179,7 @@
     justify-content: center;
     padding: 16px 8px;
     gap: 6px;
-    border-right: 2px solid #1a1a1a;
+    border-right: 2px solid var(--border);
   }
 
   .step-emoji {
@@ -79,7 +194,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     text-align: center;
-    color: #666;
+    color: var(--text-muted);
     line-height: 1.4;
   }
 
@@ -93,7 +208,7 @@
   .step-num {
     font-family: 'DM Mono', monospace;
     font-size: 10px;
-    color: #bbb;
+    color: var(--text-xfaint);
     font-weight: 500;
     letter-spacing: 0.1em;
   }
@@ -102,32 +217,32 @@
     font-size: 16px;
     font-weight: 700;
     line-height: 1.3;
-    color: #1a1a1a;
+    color: var(--text);
   }
 
   .step-desc {
     font-size: 12.5px;
-    color: #666;
+    color: var(--text-muted);
     line-height: 1.5;
     font-style: italic;
   }
 
   /* Colour variants */
-  .step.treasurer .step-who { background: #dbeafe; }
-  .step.liaison   .step-who { background: #dcfce7; }
-  .step.processor .step-who { background: #fef3c7; }
-  .step.office    .step-who { background: #fce7f3; }
+  .step.treasurer .step-who { background: var(--treasurer-bg); }
+  .step.liaison   .step-who { background: var(--liaison-bg); }
+  .step.processor .step-who { background: var(--processor-bg); }
+  .step.office    .step-who { background: var(--office-bg); }
 
   .step.key {
     background: #1a1a1a;
-    border-color: #1a1a1a;
+    border-color: var(--text);
   }
 
-  .step.key .step-body { background: #1a1a1a; }
-  .step.key .step-num { color: #666; }
-  .step.key .step-title { color: #f0ede8; }
-  .step.key .step-desc { color: #888; }
-  .step.key .step-who { border-right-color: #333; }
+  .step.key .step-body { background: var(--dark-bg); }
+  .step.key .step-num { color: var(--text-muted); }
+  .step.key .step-title { color: var(--dark-text); }
+  .step.key .step-desc { color: var(--dark-muted); }
+  .step.key .step-who { border-right-color: var(--dark-border); }
 
   /* ── CONNECTOR ── */
   .connector {
@@ -144,16 +259,16 @@
     top: 0; bottom: 0;
     left: 50%;
     width: 2px;
-    background: #c8c3bb;
+    background: var(--border-mid);
   }
 
   .connector-label {
-    background: #f0ede8;
-    border: 1.5px solid #c8c3bb;
+    background: var(--bg);
+    border: 1.5px solid var(--border-mid);
     border-radius: 20px;
     font-family: 'DM Mono', monospace;
     font-size: 9px;
-    color: #aaa;
+    color: var(--text-faint);
     padding: 3px 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -161,11 +276,11 @@
     z-index: 1;
   }
 
-  .connector.then .connector-label { color: #aaa; }
+  .connector.then .connector-label { color: var(--text-faint); }
   .connector.wait .connector-label {
-    background: #fffbeb;
-    border-color: #fcd34d;
-    color: #b45309;
+    background: var(--wait-bg);
+    border-color: var(--amber-border);
+    color: var(--amber-text);
   }
 
   /* ── PARALLEL BLOCK ── */
@@ -179,7 +294,7 @@
     text-align: center;
     font-family: 'DM Mono', monospace;
     font-size: 9px;
-    color: #bbb;
+    color: var(--text-xfaint);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -192,26 +307,27 @@
     align-items: start;
   }
 
-  .parallel .step { box-shadow: 3px 3px 0 #1a1a1a; }
+  .parallel .step { box-shadow: 3px 3px 0 var(--shadow); }
 
   /* ── FINANCE TEAM GROUP ── */
   .group-wrapper {
     display: flex;
     flex-direction: column;
-    border: 2px dashed #15803d;
+    border: 2px dashed var(--green-border);
     border-radius: 14px;
     padding: 12px 12px 12px;
     gap: 0;
     position: relative;
-    background: rgba(220, 252, 231, 0.15);
+    background: var(--group-wrapper-bg);
   }
 
   .group-label {
     position: absolute;
     top: -11px;
     left: 20px;
-    background: #15803d;
-    color: #fff;
+    background: var(--liaison-bg);
+    color: var(--text);
+    border: 1.5px solid var(--green-border);
     font-family: 'DM Mono', monospace;
     font-size: 9px;
     font-weight: 500;
@@ -238,16 +354,183 @@
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.06em;
-    color: #1a1a1a;
-    border: 1.5px solid #1a1a1a;
+    color: var(--text);
+    border: 1.5px solid var(--border);
     border-radius: 12px;
     padding: 7px 14px;
-    box-shadow: 2px 2px 0 #1a1a1a;
+    box-shadow: 2px 2px 0 var(--shadow);
     flex: 1 1 0;
     min-width: 0;
   }
 
-  /* ── MOBILE ── */
+  .legend-treasurer { background: var(--treasurer-bg); }
+  .legend-liaison   { background: var(--liaison-bg); }
+  .legend-processor { background: var(--processor-bg); }
+  .legend-office    { background: var(--office-bg); }
+
+  /* ── TEMPLATE BOX ── */
+  .template-box {
+    margin-top: 8px;
+    background: var(--label-bg);
+    border: 1.5px solid var(--border-mid);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+  }
+
+  .template-box .field-label {
+    color: var(--text-faint);
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .template-box .field-label .optional {
+    color: var(--text-xfaint);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .template-box .field-divider {
+    border-bottom: 1.5px solid var(--border-mid);
+  }
+
+  .template-box .receipts-note {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+  }
+
+  /* ── CALLOUT BOXES ── */
+  .callout {
+    margin-top: 10px;
+    border-radius: 6px;
+    padding: 9px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    border-width: 1.5px;
+    border-style: solid;
+  }
+
+  .callout-blue {
+    background: var(--blue-bg);
+    border-color: var(--blue-border);
+    color: var(--blue-text);
+  }
+
+  .callout-green {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+    color: var(--green-text);
+  }
+
+  .callout-amber {
+    margin-top: 8px;
+    background: var(--amber-bg);
+    border-color: var(--amber-border);
+    color: var(--amber-text);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  /* ── COMPARISON TABLE ── */
+  .cmp-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr;
+  }
+
+  .cmp-label {
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    background: var(--cmp-label-bg);
+    border-right: 1.5px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+  }
+
+  .cmp-before {
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    border-right: 1.5px solid var(--border-soft);
+    background: var(--cmp-before-bg);
+  }
+
+  .cmp-after {
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    background: var(--cmp-after-bg);
+  }
+
+  .cmp-row:not(:last-child) {
+    border-bottom: 1.5px solid var(--border-soft);
+  }
+
+  /* ── CMP HEADER ── */
+  .cmp-header-before {
+    background: var(--dark-bg);
+    color: var(--dark-text);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    border-right: 1.5px solid var(--dark-border);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .cmp-header-after {
+    background: var(--liaison-bg);
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    border-left: 1.5px solid var(--green-border);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+  }
+
+  .tg-btn {
+    background: #229ED9;
+    color: #fff;
+    box-shadow: 3px 3px 0 #1565a0;
+    border: 2px solid #1565a0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .tg-btn {
+      background: #1a7aaa;
+      color: #fff;
+      box-shadow: 3px 3px 0 #229ED9;
+      border: 2px solid #229ED9;
+    }
+  }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   @media (max-width: 600px) {
     body {
       padding: 24px 12px 48px;
@@ -258,17 +541,14 @@
       margin-bottom: 6px;
     }
 
-    /* Quote */
     body > p:first-of-type {
       font-size: 11px;
     }
 
-    /* Before/after grid → stack vertically */
     .before-after {
       grid-template-columns: 1fr !important;
     }
 
-    /* Step cards — shrink left column */
     .step {
       grid-template-columns: 54px 1fr;
     }
@@ -280,36 +560,31 @@
     .step-desc { font-size: 11px; }
     .step-num { font-size: 9px; }
 
-    /* Parallel steps → stack vertically */
     .parallel {
       grid-template-columns: 1fr !important;
     }
 
-    /* On mobile, remind users parallel steps happen simultaneously */
     .parallel .step + .step::before {
       content: "⚡ at the same time";
       display: block;
       text-align: center;
       font-family: 'DM Mono', monospace;
       font-size: 9px;
-      color: #b45309;
+      color: var(--amber-text);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       margin: 6px 0;
     }
 
-    /* Group wrapper */
     .group-wrapper {
       padding: 16px 8px 12px;
     }
 
-    /* Connector */
     .connector-label {
       font-size: 8px;
       padding: 2px 8px;
     }
 
-    /* Monospace template box */
     .template-box {
       font-size: 10px !important;
       padding: 8px 10px !important;
@@ -317,24 +592,6 @@
       word-break: break-word;
     }
 
-    /* Callout boxes inside steps */
-    .step-body > div[style*="background:#dbeafe"],
-    .step-body > div[style*="background:#dcfce7"],
-    .step-body > div[style*="background:#fef3c7"] {
-      font-size: 11px !important;
-      padding: 7px 10px !important;
-    }
-
-    /* Comparison table — stack on mobile */
-    .before-after [style*="grid-template-columns:1fr 1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-
-    .before-after [style*="grid-template-columns:1fr 1fr 1fr"] > div:first-child {
-      border-right: none !important;
-      border-bottom: 1.5px solid #e0dbd4;
-    }
-    /* Comparison table — stack label above before/after on mobile */
     .cmp-row {
       grid-template-columns: 1fr 1fr !important;
     }
@@ -342,7 +599,7 @@
     .cmp-label {
       grid-column: 1 / -1;
       border-right: none !important;
-      border-bottom: 1px solid #e0dbd4;
+      border-bottom: 1px solid var(--border-soft);
       padding: 6px 10px;
       font-size: 8px;
     }
@@ -353,8 +610,7 @@
     }
 
     .cmp-before {
-      border-right: 1.5px solid #e0dbd4 !important;
-      background: #fff9f9;
+      border-right: 1.5px solid var(--border-soft) !important;
     }
 
     .cmp-before::before {
@@ -375,22 +631,16 @@
       font-family: 'DM Mono', monospace;
       font-size: 8px;
       font-weight: 700;
-      color: #15803d;
+      color: var(--green-text);
       letter-spacing: 0.06em;
       text-transform: uppercase;
       margin-bottom: 4px;
     }
 
-    .cmp-header .cmp-label,
-    .cmp-header > div {
-      padding: 8px 10px;
-      font-size: 9px;
-    }
-
-    /* Hide the header row on mobile since we use ::before labels */
     .cmp-header {
       display: none !important;
     }
+
     .legend {
       grid-template-columns: 1fr 1fr !important;
       gap: 6px;
@@ -408,117 +658,54 @@
       line-height: 1.3;
     }
 
-    /* THE PROCESS divider */
     .flow-divider {
       font-size: 9px;
     }
 
-    /* GitHub button */
     .github-btn {
       font-size: 10px !important;
       padding: 8px 14px !important;
     }
 
-    /* Vote footer */
     body > div:last-of-type {
       font-size: 9px;
     }
 
-    /* Left border accent per role for mobile orientation */
     .step.treasurer { border-left: 4px solid #93c5fd; }
     .step.liaison   { border-left: 4px solid #86efac; }
     .step.processor { border-left: 4px solid #fcd34d; }
     .step.office    { border-left: 4px solid #f9a8d4; }
 
-    /* Parallel wrapper on mobile */
-    .parallel-wrapper,
-    .parallel ~ div {
-      padding: 14px 8px 10px;
-    }
-
-    /* All inline callout boxes inside step-body */
     .step-body > div {
       font-size: 11px !important;
       padding: 6px 8px !important;
       word-break: break-word;
     }
   }
-  /* ── COMPARISON TABLE ── */
-  .cmp-row {
-    display: grid;
-    grid-template-columns: 160px 1fr 1fr;
-  }
-
-  .cmp-label {
-    padding: 10px 14px;
-    font-family: 'DM Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #aaa;
-    background: #f5f2ee;
-    border-right: 1.5px solid #e0dbd4;
-    display: flex;
-    align-items: center;
-  }
-
-  .cmp-before {
-    padding: 10px 14px;
-    font-size: 11.5px;
-    color: #555;
-    line-height: 1.5;
-    border-right: 1.5px solid #e0dbd4;
-    background: #fff9f9;
-  }
-
-  .cmp-after {
-    padding: 10px 14px;
-    font-size: 11.5px;
-    color: #555;
-    line-height: 1.5;
-    background: #f0fdf4;
-  }
-
-  .cmp-row:not(:last-child) {
-    border-bottom: 1.5px solid #e0dbd4;
-  }
-
-
-  .fade-in {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-
-  .fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
 </style>
 </head>
 <body>
 
 <h1>Raffles Hall Finance</h1>
 <h2 style="margin-bottom:10px;">Proposed New Claims Process</h2>
-<p style="text-align:center;font-size:12px;color:#aaa;max-width:500px;margin:0 auto 16px;line-height:1.8;font-style:italic;font-family:'DM Sans',sans-serif;">Anyone can promise change. I already built it.</p>
+<p style="text-align:center;font-size:12px;color:var(--text-faint);max-width:500px;margin:0 auto 16px;line-height:1.8;font-style:italic;font-family:'DM Sans',sans-serif;">I have spent the past year reimagining how the finance claims process can be simplified — for claimants, the Finance team, and the hall office. The system is built. All it needs is your vote.</p>
 
 <!-- LEGEND -->
-<p style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#aaa;margin-bottom:10px;">Parties Involved</p>
+<p style="text-align:center;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;">Parties Involved</p>
 <div class="legend">
-  <div class="legend-item" style="background:#dbeafe;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
+  <div class="legend-item legend-treasurer" style="flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
     <span>💰 CCA Treasurer</span>
     <span style="font-size:9px;opacity:0.55;font-weight:400;">The person in charge of claiming reimbursement for the CCA</span>
   </div>
-  <div class="legend-item" style="background:#dcfce7;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
+  <div class="legend-item legend-liaison" style="flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
     <span>🔗 Liaison</span>
     <span style="font-size:9px;opacity:0.55;font-weight:400;">Finance Team member assigned to the CCA</span>
   </div>
-  <div class="legend-item" style="background:#fef3c7;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
+  <div class="legend-item legend-processor" style="flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
     <span>⚙️ Form Processor</span>
     <span style="font-size:9px;opacity:0.55;font-weight:400;">Finance Team member in charge of form filling and compilation</span>
   </div>
-  <div class="legend-item" style="background:#fce7f3;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
+  <div class="legend-item legend-office" style="flex-direction:column;align-items:flex-start;gap:2px;line-height:1.4;">
     <span>🏛️ Finance Office</span>
     <span style="font-size:9px;opacity:0.55;font-weight:400;">RH Finance Office</span>
   </div>
@@ -526,41 +713,41 @@
 
 <!-- COMPARISON TABLE -->
 <div class="before-after" style="max-width:760px;margin:0 auto 48px;">
-  <div style="border:2px solid #1a1a1a;border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 #1a1a1a;">
+  <div style="border:2px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 var(--shadow);">
 
     <!-- Header row -->
-    <div class="cmp-row cmp-header" style="display:grid;grid-template-columns:1fr 1fr 1fr;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;">
-      <div style="background:#f5f2ee;padding:10px 14px;color:#aaa;border-bottom:2px solid #1a1a1a;border-right:1.5px solid #e0dbd4;"></div>
-      <div style="background:#1a1a1a;color:#f0ede8;padding:10px 14px;border-bottom:2px solid #1a1a1a;border-right:1.5px solid #333;">✗ &nbsp;Before</div>
-      <div style="background:#15803d;color:#fff;padding:10px 14px;border-bottom:2px solid #1a1a1a;">✓ &nbsp;After</div>
+    <div class="cmp-row cmp-header" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
+      <div class="cmp-label" style="border-bottom:2px solid var(--border);"></div>
+      <div class="cmp-header-before">✗ &nbsp;Before</div>
+      <div class="cmp-header-after">✓ &nbsp;After</div>
     </div>
 
     <!-- Row 1 -->
-    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1.5px solid #e0dbd4;">
+    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Claim submission</div>
       <div class="cmp-before">Treasurer writes their own email — errors, inconsistent formatting</div>
       <div class="cmp-after">Treasurer Telegrams details to Liaison — no email writing needed</div>
     </div>
 
     <!-- Row 2 -->
-    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1.5px solid #e0dbd4;">
+    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Receipt limit</div>
       <div class="cmp-before">Max 5 receipts per email — multiple emails for one event</div>
       <div class="cmp-after">No limit — send all receipts for an entire event at once</div>
     </div>
 
     <!-- Row 3 -->
-    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1.5px solid #e0dbd4;">
+    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Error checking</div>
-      <div class="cmp-before">Errors caught at LOA stage or after submission — process restarts from Step 1<br><span style="font-size:10.5px;color:#e53e3e;margin-top:4px;display:inline-block;">⏱ If the error is not caught and submitted to the hall office, it will be rejected — and it can take months to get reimbursed</span></div>
+      <div class="cmp-before">Errors caught at LOA stage or after submission — process restarts from Step 1<br><span style="font-size:10.5px;color:#f87171;margin-top:4px;display:inline-block;">⏱ If the error is not caught and submitted to the hall office, it will be rejected — and it can take months to get reimbursed</span></div>
       <div class="cmp-after">Liaison catches errors before submission — issues fixed early</div>
     </div>
 
     <!-- Row 4 -->
-    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1.5px solid #e0dbd4;">
+    <div class="cmp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;">
       <div class="cmp-label">Claim documents</div>
       <div class="cmp-before">LOA, Summary, and RFP all filled in manually</div>
-      <div class="cmp-after">Auto-generated from the form — zero manual form filling</div>
+      <div class="cmp-after">Auto-generated from the form — minimal manual form filling</div>
     </div>
 
     <!-- Row 5 -->
@@ -574,10 +761,11 @@
 </div>
 
 <div class="flow-divider" style="max-width:760px;margin:0 auto 20px;display:flex;align-items:center;gap:12px;">
-  <div style="flex:1;height:1.5px;background:#d4cfc8;"></div>
-  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;">The Process</span>
-  <div style="flex:1;height:1.5px;background:#d4cfc8;"></div>
+  <div style="flex:1;height:1.5px;background:var(--border-mid);"></div>
+  <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-faint);">The Process</span>
+  <div style="flex:1;height:1.5px;background:var(--border-mid);"></div>
 </div>
+
 <div class="flow">
 
   <!-- STEP 1 -->
@@ -590,32 +778,32 @@
       <div class="step-num">STEP 1</div>
       <div class="step-title">Treasurer sends their claim details over Telegram</div>
       <div class="step-desc">Send these details to your assigned Finance team contact via Telegram.</div>
-      <div class="template-box" style="margin-top:8px;background:#f0ede8;border:1.5px solid #d4cfc8;border-radius:6px;padding:10px 14px;font-size:11.5px;font-family:'DM Mono',monospace;color:#444;">
+      <div class="template-box">
         <div style="display:flex;flex-direction:column;gap:8px;">
           <div>
-            <div style="color:#888;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Portfolio <span style="color:#ccc;font-style:italic;text-transform:none;letter-spacing:0;">(skip if Liaison knows)</span></div>
-            <div style="border-bottom:1.5px solid #d4cfc8;"></div>
+            <div class="field-label">Portfolio <span class="optional">(skip if Liaison knows)</span></div>
+            <div class="field-divider"></div>
           </div>
           <div>
-            <div style="color:#888;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">CCA <span style="color:#ccc;font-style:italic;text-transform:none;letter-spacing:0;">(skip if Liaison knows)</span></div>
-            <div style="border-bottom:1.5px solid #d4cfc8;"></div>
+            <div class="field-label">CCA <span class="optional">(skip if Liaison knows)</span></div>
+            <div class="field-divider"></div>
           </div>
           <div>
-            <div style="color:#888;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Claim Description</div>
-            <div style="border-bottom:1.5px solid #d4cfc8;"></div>
+            <div class="field-label">Claim Description</div>
+            <div class="field-divider"></div>
           </div>
           <div>
-            <div style="color:#888;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Emails of others involved</div>
-            <div style="border-bottom:1.5px solid #d4cfc8;"></div>
+            <div class="field-label">Emails of others involved</div>
+            <div class="field-divider"></div>
           </div>
           <div>
-            <div style="color:#888;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">Remarks</div>
-            <div style="border-bottom:1.5px solid #d4cfc8;"></div>
+            <div class="field-label">Remarks</div>
+            <div class="field-divider"></div>
           </div>
-          <div style="margin-top:2px;color:#888;font-style:italic;font-family:'DM Sans',sans-serif;font-size:11px;">+ Screenshots of all Receipts &amp; Bank Transactions</div>
+          <div class="receipts-note">+ Screenshots of all Receipts &amp; Bank Transactions</div>
         </div>
       </div>
-      <div style="margin-top:10px;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:6px;padding:9px 14px;font-size:12px;color:#1d4ed8;line-height:1.6;">
+      <div class="callout callout-blue">
         🎉 <strong>No receipt limit</strong> — send everything for the entire event in one go.
       </div>
     </div>
@@ -658,8 +846,8 @@
     <div class="connector then"><span class="connector-label">all looks good →</span></div>
 
     <!-- PARALLEL -->
-    <div style="margin-top:8px;border:1.5px dashed #fcd34d;border-radius:10px;padding:20px 12px 14px;position:relative;background:rgba(254,243,199,0.3);">
-      <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#b45309;color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">⚡ done at the same time</div>
+    <div style="margin-top:8px;border:1.5px dashed var(--amber-border);border-radius:10px;padding:20px 12px 14px;position:relative;background:var(--parallel-bg);">
+      <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--amber-text);color:#fff;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;">⚡ done at the same time</div>
 
       <div class="parallel-inner" style="gap:12px;">
 
@@ -672,7 +860,7 @@
           <div class="step-body">
             <div class="step-num">STEP 4A</div>
             <div class="step-title">An email is auto-generated and sent to the Treasurer</div>
-            <div class="step-desc">One click sends a ready-made email to the Treasurer — telling them exactly what to forward and attach.</div>
+            <div class="step-desc">One click sends a ready-made email to the Treasurer — telling them exactly what to send and attach.</div>
           </div>
         </div>
 
@@ -686,13 +874,12 @@
             <div class="step-num">STEP 4B</div>
             <div class="step-title">The paperwork is automatically filled in and saved</div>
             <div class="step-desc">The required claim documents are automatically filled in using the form data and saved to Google Drive.</div>
-            <div style="margin-top:8px;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:6px;padding:7px 10px;font-size:11px;color:#b45309;line-height:1.5;">⏳ On hold until the Treasurer's email and screenshot are received.</div>
+            <div class="callout callout-amber">⏳ On hold until the Treasurer sends the email to RH Finance email.</div>
           </div>
         </div>
 
       </div>
 
-      <!-- desktop: show side by side -->
       <style>
         @media (min-width: 601px) {
           .parallel-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -704,14 +891,11 @@
 
     </div>
 
-    <!-- end finance team -->
   </div>
 
   <div class="connector wait"><span class="connector-label">⏳ waiting for treasurer</span></div>
 
-
-
-  <!-- STEP 7 -->
+  <!-- STEP 5 -->
   <div class="step treasurer">
     <div class="step-who">
       <div class="step-emoji">💰</div>
@@ -721,7 +905,7 @@
       <div class="step-num">STEP 5</div>
       <div class="step-title">Treasurer sends the email to the RH Finance inbox</div>
       <div class="step-desc">Copy-paste the email content, attach your receipts and bank statements, and send to the RH Finance inbox.</div>
-      <div style="margin-top:10px;background:#dcfce7;border:1.5px solid #86efac;border-radius:6px;padding:9px 14px;font-size:12px;color:#15803d;line-height:1.6;">
+      <div class="callout callout-green">
         ✦ The email is fully prepared with instructions — just copy, paste, attach, and send.
       </div>
     </div>
@@ -733,7 +917,7 @@
   <div class="group-wrapper">
     <div class="group-label">📋 Finance Team (after treasurer responds)</div>
 
-    <!-- STEP 7 -->
+    <!-- STEP 6 -->
     <div class="step processor">
       <div class="step-who">
         <div class="step-emoji">⚙️</div>
@@ -741,7 +925,7 @@
       </div>
       <div class="step-body">
         <div class="step-num">STEP 6</div>
-        <div class="step-title">Form Processor adds the email screenshot & compiles everything into one PDF</div>
+        <div class="step-title">Form Processor adds the email screenshot &amp; compiles everything into one PDF</div>
         <div class="step-desc">Screenshot the Treasurer's email, add it to the documents, and merge everything into a single PDF.</div>
       </div>
     </div>
@@ -764,20 +948,25 @@
 
 </div>
 
-
-
 <!-- GITHUB LINK -->
-<div id="github-section" style="max-width:760px;margin:48px auto 0;padding-top:32px;border-top:1.5px solid #d4cfc8;text-align:center;">
-  <a href="https://github.com/ry-koh/Automated-Finance-Claims-Management-System" target="_blank" class="github-btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#1a1a1a;color:#f0ede8;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;box-shadow:3px 3px 0 #555;">
-    <svg height="18" width="18" viewBox="0 0 16 16" fill="#f0ede8" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-    View on GitHub
-  </a>
-  <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:9px;color:#bbb;letter-spacing:0.06em;">ry-koh/Automated-Finance-Claims-Management-System</div>
+<div id="github-section" style="max-width:760px;margin:48px auto 0;padding-top:32px;border-top:1.5px solid var(--border-mid);text-align:center;">
+  <div style="display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <a href="https://github.com/ry-koh/Automated-Finance-Claims-Management-System" target="_blank" class="github-btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:var(--github-btn-bg);color:var(--github-btn-text);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;box-shadow:3px 3px 0 var(--github-btn-shadow);border:2px solid var(--github-btn-border);">
+      <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      View on GitHub
+    </a>
+    <a href="http://t.me/ry_koh" target="_blank" class="tg-btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;">
+      <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.68l-2.965-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.963.879z"/></svg>
+      Have a question?
+    </a>
+  </div>
+  <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:9px;color:var(--footer-text);letter-spacing:0.06em;">ry-koh/Automated-Finance-Claims-Management-System</div>
 </div>
 
-<div style="text-align:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:10px;color:#bbb;letter-spacing:0.08em;">
-  built by <span style="color:#1a1a1a;font-weight:500;">Ryan Koh</span> &nbsp;·&nbsp; vote Ryan Koh for finance d
+<div style="text-align:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:10px;color:var(--footer-text);letter-spacing:0.08em;">
+  built by <span style="color:var(--footer-name);font-weight:500;">Ryan Koh</span> &nbsp;·&nbsp; vote Ryan Koh for finance d
 </div>
+
 <script>
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
