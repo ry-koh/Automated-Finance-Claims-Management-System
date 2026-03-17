@@ -578,6 +578,12 @@ function createClaimsForm(ss) {
 
   installFormSubmitTrigger(ss);
 
+  // Move the form file into the main claims folder
+  const mainFolderId = getConfigValue('MAIN_FOLDER_ID');
+  if (mainFolderId) {
+    DriveApp.getFileById(form.getId()).moveTo(DriveApp.getFolderById(mainFolderId));
+  }
+
   console.log('Form created: ' + form.getPublishedUrl());
   return form;
 }
@@ -1287,6 +1293,10 @@ function createFolderStructure(ss, config) {
     }
   }
   
+  // Move the spreadsheet itself into the main folder
+  const ssFile = DriveApp.getFileById(ss.getId());
+  ssFile.moveTo(mainFolder);
+
   return {
     mainFolderId: mainFolder.getId(),
     rfpFolderId: rfpFolder.getId()
