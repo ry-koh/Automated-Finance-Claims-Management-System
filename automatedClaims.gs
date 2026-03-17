@@ -283,6 +283,10 @@ function createCCASpendingSheet(ss) {
   const totalCols = sheet.getMaxColumns();
   if (totalCols > TOTAL_COLS) sheet.deleteColumns(TOTAL_COLS + 1, totalCols - TOTAL_COLS);
 
+  // Protect entire sheet — read only, no unprotected ranges
+  const protection = sheet.protect().setDescription('CCA Spending - read only');
+  protection.setWarningOnly(true);
+
   return sheet;
 }
 
