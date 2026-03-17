@@ -14,13 +14,16 @@ function setupClaimsSystem() {
   }
   
   try {
-    // Create all sheets
+    // Create all sheets — Finance Team must be created before Add Claim template
+    // so the Processed By dropdown validation can reference it
     createConfigSheet(ss);
     createMasterSheet(ss);
     createClaimsDataSheet(ss);
-    createAddClaimTemplate(ss);
     createIdentifierDataSheet(ss);
     createFormOptionsSheet(ss);
+    createFinanceTeamSheet(ss);
+    createAddClaimTemplate(ss);
+    createCCASpendingSheet(ss);
 
     let originalSheet = ss.getSheetByName('Sheet1');
     if (originalSheet) ss.deleteSheet(originalSheet);
@@ -29,7 +32,6 @@ function setupClaimsSystem() {
     const config = loadConfigFromSheet(ss);
     createFolderStructure(ss, config);
 
-    // FIX 3: Only create the form if Form Responses doesn't exist; otherwise ask
     const existingFormSheet = ss.getSheetByName('Form Responses');
     if (!existingFormSheet) {
       createClaimsForm(ss);
@@ -45,7 +47,7 @@ function setupClaimsSystem() {
     }
     
     ui.alert(
-      'Setup Complete!\n\nNext steps:\n1. Fill in the Config sheet (template IDs, Finance D info, academic year)\n2. The Google Form has been created — URL saved in Config sheet\n3. ⚠️  Open the form and manually add 2 file upload fields per receipt section (10 total):\n   • "Receipt Softcopy/Image [N]"\n   • "Bank Transaction Screenshot [N]"\n   Place each pair after "Amount [N]", before "Are there more receipts?"\n4. Share the form link with claimers',
+      'Setup Complete!\n\nNext steps:\n1. Fill in the Config sheet (template IDs, Finance D info, academic year)\n2. The Google Form has been created — URL saved in Config sheet\n3. ⚠️  Open the form and manually add 2 file upload fields per receipt section (10 total):\n   • "Receipt Softcopy/Image [N]"\n   • "Bank Transaction Screenshot [N]"\n   Place each pair after "Amount [N]", before "Are there more receipts?"\n4. Fill in the Finance Team sheet with team member names\n5. Share the form link with claimers',
       ui.ButtonSet.OK
     );
     
@@ -55,6 +57,246 @@ function setupClaimsSystem() {
     ui.alert('Error', `Setup failed: ${e.message}`, ui.ButtonSet.OK);
     console.error('Setup error:', e);
   }
+}
+
+// ============================================================================
+// FINANCE TEAM SHEET (NEW)
+// ============================================================================
+
+function createFinanceTeamSheet(ss) {
+  let sheet = ss.getSheetByName('Finance Team');
+  
+  if (sheet) {
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert(
+      'Finance Team Exists',
+      'Reset Finance Team sheet? (This erases current member list)',
+      ui.ButtonSet.YES_NO
+    );
+    if (response === ui.Button.YES) {
+      ss.deleteSheet(sheet);
+    } else {
+      return sheet;
+    }
+  }
+  
+  sheet = ss.insertSheet('Finance Team', 6);
+
+  // Header row
+  sheet.getRange(1, 1, 1, 3)
+    .setValues([['Name', 'Forms Filled', 'Claims Processed']])
+    .setBackground('#4a86e8')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  // Leave column A empty for manual input — add a placeholder note
+  sheet.getRange('A2').setNote('Enter Finance Team member names here, one per row. These will appear as options in the "Processed By" dropdown on the Add Claim sheet.');
+
+  // Formulas for counts in columns B and C will be added dynamically
+  // when names are entered. For now, set up sample formula structure
+  // that users can extend. We'll use COUNTIF against Claims Data sheet.
+  // Columns B and C: filled by formulas referencing Claims Data
+  // Claims Data col 18 = FILLED_BY, col 19 = PROCESSED_BY (0-indexed)
+  // In sheet column notation: Claims Data col S = FilledBy, col T = ProcessedBy
+  for (let row = 2; row <= 50; row++) {
+    sheet.getRange(row, 2).setFormula(
+      `=IF(A${row}="","",COUNTIF('Claims Data'!S:S,A${row}))`
+    );
+    sheet.getRange(row, 3).setFormula(
+      `=IF(A${row}="","",COUNTIF('Claims Data'!T:T,A${row}))`
+    );
+  }
+
+  sheet.setColumnWidth(1, 200);
+  sheet.setColumnWidth(2, 150);
+  sheet.setColumnWidth(3, 180);
+
+  // Delete unused columns beyond C
+  const totalCols = sheet.getMaxColumns();
+  if (totalCols > 3) sheet.deleteColumns(4, totalCols - 3);
+
+  // Protect count columns — only Name column (A) is editable
+  const protection = sheet.protect().setDescription('Finance Team protection');
+  protection.setWarningOnly(true);
+  const editableRange = sheet.getRange('A:A');
+  protection.setUnprotectedRanges([editableRange]);
+
+  return sheet;
+}
+
+// ============================================================================
+// CCA SPENDING TRACKER SHEET (NEW)
+// ============================================================================
+
+function createCCASpendingSheet(ss) {
+  let sheet = ss.getSheetByName('CCA Spending');
+  
+  if (sheet) {
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert(
+      'CCA Spending Exists',
+      'Reset CCA Spending sheet? (This erases current data)',
+      ui.ButtonSet.YES_NO
+    );
+    if (response === ui.Button.YES) {
+      ss.deleteSheet(sheet);
+    } else {
+      return sheet;
+    }
+  }
+  
+  sheet = ss.insertSheet('CCA Spending', 7);
+
+  // Claims Data column references (sheet notation, 1-based):
+  //   col J (10) = CCA
+  //   col L (12) = Total Claim Amount
+  //   col O (15) = WBS Account Name (full name e.g. "Student Activity Fund")
+  //
+  // Combined table columns:
+  //   A = Portfolio
+  //   B = CCA
+  //   C = Total Spent ($)   — SUMIF across all funds
+  //   D = No. of Claims
+  //   E = SA ($)
+  //   F = MBH ($)
+  //   G = MF ($)
+  //   H = MF (RHMP) ($)
+
+  const FUNDS = [
+    { short: 'SA',        full: 'Student Activity Fund',  col: 5 },  // E
+    { short: 'MBH',       full: 'Managed by Hall Fund',   col: 6 },  // F
+    { short: 'MF',        full: 'Master Fund',            col: 7 },  // G
+    { short: 'MF (RHMP)', full: 'Master Fund (RHMP)',     col: 8 }   // H
+  ];
+
+  const TOTAL_COLS = 4 + FUNDS.length; // A–H = 8 cols
+
+  const portfolios = Object.keys(CCA_DEPARTMENTS);
+
+  // ---- Title ----
+  sheet.getRange(1, 1, 1, TOTAL_COLS).merge()
+    .setValue('CCA SPENDING TRACKER')
+    .setFontSize(14)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setBackground('#4a86e8')
+    .setFontColor('#ffffff');
+
+  // ---- Header row ----
+  const headers = [
+    'Portfolio', 'CCA', 'Total Spent ($)', 'No. of Claims',
+    ...FUNDS.map(f => f.short + ' ($)')
+  ];
+  sheet.getRange(2, 1, 1, TOTAL_COLS)
+    .setValues([headers])
+    .setBackground('#cfe2f3')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  // ---- Data rows ----
+  let currentRow = 3;
+
+  portfolios.forEach(portfolio => {
+    CCA_DEPARTMENTS[portfolio].forEach(cca => {
+      sheet.getRange(currentRow, 1).setValue(portfolio);
+      sheet.getRange(currentRow, 2).setValue(cca);
+
+      // Total Spent = SUMIF on CCA across all claims
+      sheet.getRange(currentRow, 3).setFormula(
+        `=IFERROR(SUMIF('Claims Data'!J:J,B${currentRow},'Claims Data'!L:L),0)`
+      );
+      // No. of Claims = COUNTIF on CCA
+      sheet.getRange(currentRow, 4).setFormula(
+        `=IFERROR(COUNTIF('Claims Data'!J:J,B${currentRow}),0)`
+      );
+
+      // Fund breakdown columns — SUMPRODUCT matching CCA AND fund name
+      FUNDS.forEach(fund => {
+        sheet.getRange(currentRow, fund.col).setFormula(
+          `=IFERROR(SUMIFS('Claims Data'!L:L,'Claims Data'!J:J,B${currentRow},'Claims Data'!O:O,"${fund.full}"),0)`
+        );
+      });
+
+      currentRow++;
+    });
+  });
+
+  const lastDataRow = currentRow - 1;
+
+  // ---- Totals row ----
+  sheet.getRange(currentRow, 1, 1, 2).merge()
+    .setValue('GRAND TOTAL')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setBackground('#d9ead3');
+
+  // Total Spent grand total
+  sheet.getRange(currentRow, 3)
+    .setFormula(`=SUM(C3:C${lastDataRow})`)
+    .setFontWeight('bold')
+    .setBackground('#d9ead3')
+    .setNumberFormat('"$"#,##0.00');
+
+  // No. of Claims grand total
+  sheet.getRange(currentRow, 4)
+    .setFormula(`=SUM(D3:D${lastDataRow})`)
+    .setFontWeight('bold')
+    .setBackground('#d9ead3');
+
+  // Fund column grand totals
+  FUNDS.forEach(fund => {
+    const colLetter = columnLetter(fund.col);
+    sheet.getRange(currentRow, fund.col)
+      .setFormula(`=SUM(${colLetter}3:${colLetter}${lastDataRow})`)
+      .setFontWeight('bold')
+      .setBackground('#d9ead3')
+      .setNumberFormat('"$"#,##0.00');
+  });
+
+  // ---- Number formatting ----
+  // Total Spent col (C) and all fund cols (E–H) for data rows
+  sheet.getRange(3, 3, lastDataRow - 2, 1).setNumberFormat('"$"#,##0.00');
+  FUNDS.forEach(fund => {
+    sheet.getRange(3, fund.col, lastDataRow - 2, 1).setNumberFormat('"$"#,##0.00');
+  });
+
+  // ---- Alternating row colours ----
+  for (let r = 3; r <= lastDataRow; r++) {
+    if (r % 2 === 0) sheet.getRange(r, 1, 1, TOTAL_COLS).setBackground('#f8f9fa');
+  }
+
+  // ---- Column widths & freeze ----
+  sheet.setColumnWidth(1, 150);  // A Portfolio
+  sheet.setColumnWidth(2, 200);  // B CCA
+  sheet.setColumnWidth(3, 150);  // C Total Spent
+  sheet.setColumnWidth(4, 130);  // D No. of Claims
+  FUNDS.forEach(fund => sheet.setColumnWidth(fund.col, 140));
+
+  sheet.setFrozenRows(2);
+
+  // Delete unused rows and columns
+  const totalRows = sheet.getMaxRows();
+  const usedRows = currentRow; // totals row is currentRow (lastDataRow + 1)
+  if (totalRows > usedRows) sheet.deleteRows(usedRows + 1, totalRows - usedRows);
+
+  const totalCols = sheet.getMaxColumns();
+  if (totalCols > TOTAL_COLS) sheet.deleteColumns(TOTAL_COLS + 1, totalCols - TOTAL_COLS);
+
+  return sheet;
+}
+
+/**
+ * Converts a 1-based column number to a letter string (e.g. 1→A, 26→Z, 27→AA).
+ */
+function columnLetter(col) {
+  let letter = '';
+  while (col > 0) {
+    const mod = (col - 1) % 26;
+    letter = String.fromCharCode(65 + mod) + letter;
+    col = Math.floor((col - 1) / 26);
+  }
+  return letter;
 }
 
 // ============================================================================
@@ -88,7 +330,6 @@ function createFormOptionsSheet(ss) {
     .setFontWeight('bold')
     .setHorizontalAlignment('center');
 
-  // Populate from the CCA_DEPARTMENTS constant
   const portfolios = Object.keys(CCA_DEPARTMENTS);
   let currentRow = 2;
 
@@ -105,7 +346,6 @@ function createFormOptionsSheet(ss) {
   sheet.setColumnWidth(2, 200);
   sheet.deleteRows(currentRow, sheet.getMaxRows() - currentRow + 1);
 
-  // Add note for users
   sheet.getRange('A1').setNote('Add or remove Portfolio/CCA pairs here. These will be used in the Google Form dropdowns. Re-run "Create Claims Form" from the Claims Tools menu to update the form.');
 
   sheet.hideSheet();
@@ -116,10 +356,6 @@ function createFormOptionsSheet(ss) {
 // GOOGLE FORM CREATION
 // ============================================================================
 
-/**
- * Reads Portfolio and CCA data from the Form Options sheet.
- * Returns: { portfolios: [...], ccaByPortfolio: { Portfolio: [...ccas] } }
- */
 function loadFormOptions(ss) {
   const sheet = ss.getSheetByName('Form Options');
   if (!sheet) throw new Error('Form Options sheet not found. Please run setup first.');
@@ -147,27 +383,34 @@ function loadFormOptions(ss) {
 /**
  * Creates the Google Form, sets up sections with branching logic,
  * and links responses to a new 'Form Responses' sheet.
+ *
+ * Form Section 1 column order in the linked sheet (after Timestamp col A):
+ *   B = Portfolio
+ *   C = CCA
+ *   D = Claim Description
+ *   E = Other Emails
+ *   F = Remarks
+ *   G = Filled By  ← NEW
+ * Receipt blocks then start at col H (col index 8, 1-based).
  */
 function createClaimsForm(ss) {
   const ui = SpreadsheetApp.getUi();
   const { portfolios, ccaByPortfolio } = loadFormOptions(ss);
 
-  // --- Create the Form ---
   const form = FormApp.create('Claims Submission Form');
   form.setTitle('Claims Submission Form');
   form.setAllowResponseEdits(false);
   form.setLimitOneResponsePerUser(false);
 
   // ---- SECTION 1: Basic Info ----
+
   // Portfolio dropdown
   const portfolioItem = form.addListItem();
   portfolioItem.setTitle('Portfolio')
     .setRequired(true)
     .setChoices(portfolios.map(p => portfolioItem.createChoice(p)));
 
-  // CCA dropdown — flat list of all CCAs (Google Forms doesn't support dynamic filtering)
-  // We include all CCAs and note that claimers should pick the correct one.
-  // A separate "CCA" question per portfolio would require many sections; flat list is the practical approach.
+  // CCA dropdown
   const allCcas = [];
   portfolios.forEach(p => {
     (ccaByPortfolio[p] || []).forEach(cca => {
@@ -196,11 +439,17 @@ function createClaimsForm(ss) {
     .setTitle('Remarks')
     .setRequired(false);
 
-  // ---- RECEIPT SECTIONS (1–5) ----
-  // Section indices: Section 1 is index 0.
-  // We'll create Sections 2–6 for receipts 1–5.
-  // After the last receipt (5), no more branching needed.
+  // ---- NEW: Filled By dropdown (last question in Section 1) ----
+  // Placeholder options — replace manually in the Google Form UI with actual names.
+  const filledByItem = form.addListItem();
+  filledByItem.setTitle('Filled by')
+    .setRequired(true)
+    .setChoices([
+      filledByItem.createChoice('Person 1'),
+      filledByItem.createChoice('Person 2')
+    ]);
 
+  // ---- RECEIPT SECTIONS (1–5) ----
   const receiptSections = [];
 
   for (let i = 1; i <= 5; i++) {
@@ -218,7 +467,6 @@ function createClaimsForm(ss) {
       .setHelpText('Name of vendor / merchant')
       .setRequired(false);
 
-    // FIX 2: Date question with DD/MM/YYYY help text to guide claimers
     form.addDateItem()
       .setTitle(`Date of Receipt/Invoice ${i}`)
       .setHelpText('DD/MM/YYYY')
@@ -234,46 +482,38 @@ function createClaimsForm(ss) {
       .setHelpText('Enter amount in numbers only, e.g. 12.50')
       .setRequired(true);
 
-    // ⚠️ MANUAL STEP REQUIRED after setup — open the form in Google Forms UI
-    // and add these two questions after "Amount ${i}", before "Are there more receipts?":
+    // ⚠️ MANUAL STEP REQUIRED after setup — add file upload questions:
     //   1. "Receipt Softcopy/Image ${i}"     — File upload | Required | Images + PDF | Max 10MB
     //   2. "Bank Transaction Screenshot ${i}" — File upload | Required | Images + PDF | Max 10MB
-    // Do this for all 5 receipt sections (10 upload fields total).
+    // Place each pair after "Amount ${i}", before "Are there more receipts?"
 
-    // "More receipts?" branching — only add for receipts 1–4
     if (i < 5) {
       const moreReceiptsItem = form.addMultipleChoiceItem();
       moreReceiptsItem.setTitle('Are there more receipts?')
         .setRequired(true);
-
-      // Choices will be set with branching after all sections are created
-      // Store a reference to set branching logic after all sections exist
       receiptSections[i - 1]._moreReceiptsItem = moreReceiptsItem;
     }
   }
 
   // ---- SET BRANCHING LOGIC ----
-  // Now that all sections exist, set the "Yes → next section, No → submit" choices
   for (let i = 0; i < 4; i++) {
     const moreReceiptsItem = receiptSections[i]._moreReceiptsItem;
-    const nextSection = receiptSections[i + 1]; // next receipt section
+    const nextSection = receiptSections[i + 1];
 
     moreReceiptsItem.setChoices([
-      moreReceiptsItem.createChoice('Yes', nextSection),                      // Go to next receipt
-      moreReceiptsItem.createChoice('No', FormApp.PageNavigationType.SUBMIT)  // Submit form
+      moreReceiptsItem.createChoice('Yes', nextSection),
+      moreReceiptsItem.createChoice('No', FormApp.PageNavigationType.SUBMIT)
     ]);
   }
 
   // ---- LINK FORM TO SPREADSHEET ----
-  // Delete existing Form Responses sheet if present (will be recreated by linkFormToSheet)
   const existingResponseSheet = ss.getSheetByName('Form Responses');
   if (existingResponseSheet) ss.deleteSheet(existingResponseSheet);
 
   form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
 
-  // The above creates a sheet named "Form Responses (1)" or similar — rename it
   SpreadsheetApp.flush();
-  Utilities.sleep(2000); // Give Sheets time to create the linked sheet
+  Utilities.sleep(2000);
 
   const allSheets = ss.getSheets();
   const linkedSheet = allSheets.find(s =>
@@ -295,28 +535,23 @@ function createClaimsForm(ss) {
     formResponsesSheet.setColumnWidth(1, 100);
     formResponsesSheet.setColumnWidth(2, 200);
 
-    // FIX 2: Format date columns in Form Responses to DD/MM/YYYY
-    // Timestamp is col 3 (C), receipt dates are at cols 11, 17, 23, 29, 35 (1-indexed)
-    // after the 2 prepended cols: Processed(1), Error(2), Timestamp(3), Portfolio(4), CCA(5),
-    // ClaimDesc(6), OtherEmails(7), Remarks(8), then Receipt blocks start at col 9
-    // Each receipt block: Desc(+0), Company(+1), Date(+2), ReceiptNo(+3), Amount(+4), Softcopy(+5), Bank(+6) = 7 cols
-    // Receipt 1 date = col 9+2 = 11, Receipt 2 = 11+7 = 18... wait, block is 7 wide so:
-    // R1 date=11, R2 date=18, R3 date=25, R4 date=32, R5 date=39
-    // But file upload fields add 2 per receipt (softcopy + bank), so each block is actually 9 cols wide
-    // with file uploads: Desc, Company, Date, ReceiptNo, Amount, Softcopy, Bank, [MoreReceipts for 1-4] = varies
-    // Conservative approach: apply format to the entire sheet date-like columns using number format
+    // Format timestamp column (col 3 = C)
     formResponsesSheet.getRange(1, 3, formResponsesSheet.getMaxRows(), 1)
-      .setNumberFormat('DD/MM/YYYY HH:mm:ss'); // Timestamp col
-    // Receipt date cols: R1=9+2=11, R2=15+2=17, R3=21+2=23, R4=27+2=29, R5=33+2=35
-    // Receipt date cols: R1=7+2=9, R2=13+2=15, R3=21, R4=27, R5=33
-    // Receipt date cols: R1=7+2=9, R2=13+2=15, R3=19+2=21, R4=25+2=27, R5=31+2=33
-    [9, 15, 21, 27, 33].forEach(col => {
+      .setNumberFormat('DD/MM/YYYY HH:mm:ss');
+
+    // Receipt date columns — shifted right by 1 due to new "Filled By" col (now col G=7):
+    // Section 1 cols (1-based, after +2 prepended cols):
+    //   C=Timestamp, D=Portfolio, E=CCA, F=ClaimDesc, G=OtherEmails, H=Remarks, I=FilledBy
+    // Receipt blocks start at col J (10).
+    // Each receipt block (without file uploads) = 6 cols: Desc, Company, Date, ReceiptNo, Amount, MoreReceipts?
+    // R1 date = col 10+2 = 12
+    // R2 date = 12+6 = 18 → wait, block = 6 wide so: R1=10, R2=16, R3=22, R4=28, R5=34
+    // R1 date = 10+2=12, R2=16+2=18, R3=22+2=24, R4=28+2=30, R5=34+2=36
+    [12, 18, 24, 30, 36].forEach(col => {
       formResponsesSheet.getRange(2, col, formResponsesSheet.getMaxRows() - 1, 1)
         .setNumberFormat('DD/MM/YYYY');
     });
 
-    // Add a trigger to auto-insert checkboxes in A and B for each new form response
-    // Also pre-fill checkboxes for any existing data rows
     const lastRow = formResponsesSheet.getLastRow();
     if (lastRow > 1) {
       formResponsesSheet.getRange(2, 1, lastRow - 1, 2).insertCheckboxes();
@@ -335,24 +570,18 @@ function createClaimsForm(ss) {
       }
     }
     if (formUrlRow === -1) {
-      // Append after last config row
       configSheet.appendRow(['FORM_URL', form.getPublishedUrl(), 'Share this link with claimers']);
     } else {
       configSheet.getRange(formUrlRow, 2).setValue(form.getPublishedUrl());
     }
   }
 
-  // Install trigger to auto-add checkboxes on each new form submission
   installFormSubmitTrigger(ss);
 
   console.log('Form created: ' + form.getPublishedUrl());
   return form;
 }
 
-/**
- * Regenerate the Google Form (e.g. after updating Form Options sheet).
- * Accessible from the Claims Tools menu.
- */
 function recreateClaimsForm() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const ui = SpreadsheetApp.getUi();
@@ -382,18 +611,12 @@ function recreateClaimsForm() {
 // FORM SUBMIT TRIGGER
 // ============================================================================
 
-/**
- * Automatically called when a form response is submitted.
- * Inserts checkboxes in the Processed (col A) and Error (col B) columns
- * for the newly added row.
- */
 function onFormSubmitInsertCheckboxes(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('Form Responses');
     if (!sheet) return;
 
-    // The new response is always appended at the last row
     const newRow = sheet.getLastRow();
     if (newRow < 2) return;
 
@@ -403,12 +626,7 @@ function onFormSubmitInsertCheckboxes(e) {
   }
 }
 
-/**
- * Installs the onFormSubmit trigger for the spreadsheet.
- * Called automatically during setup via createClaimsForm.
- */
 function installFormSubmitTrigger(ss) {
-  // Remove any existing triggers for this function to avoid duplicates
   const triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(trigger => {
     if (trigger.getHandlerFunction() === 'onFormSubmitInsertCheckboxes') {
@@ -416,7 +634,6 @@ function installFormSubmitTrigger(ss) {
     }
   });
 
-  // Install a fresh trigger
   ScriptApp.newTrigger('onFormSubmitInsertCheckboxes')
     .forSpreadsheet(ss)
     .onFormSubmit()
@@ -424,7 +641,7 @@ function installFormSubmitTrigger(ss) {
 }
 
 // ============================================================================
-// PART 2: EXISTING SHEET CREATION FUNCTIONS (UNCHANGED)
+// SHEET CREATION FUNCTIONS
 // ============================================================================
 
 function createConfigSheet(ss) {
@@ -482,7 +699,6 @@ function createConfigSheet(ss) {
   sheet.deleteRows(data.length + 1, sheet.getMaxRows() - data.length);
   sheet.deleteColumns(4, sheet.getMaxColumns() - 3);
 
-  // Conditional formatting for required fields
   const requiredRange1 = sheet.getRange('B2:B5');
   const requiredRange2 = sheet.getRange('B8:B9');
   
@@ -540,13 +756,11 @@ function createMasterSheet(ss) {
     .setHorizontalAlignment('center')
     .setWrap(true);
 
-  // Pastel green for editable columns: J(10), L(12), N(14), O(15), P(16)
   const pastelGreen = '#d9ead3';
   [10, 12, 14, 15, 16].forEach(col => {
     sheet.getRange(1, col).setBackground(pastelGreen).setFontColor('#000000');
   });
 
-  // Pastel red for Finance D columns: R(18) to W(23)
   const pastelRed = '#f4cccc';
   for (let col = 18; col <= 23; col++) {
     sheet.getRange(1, col).setBackground(pastelRed).setFontColor('#000000');
@@ -555,11 +769,11 @@ function createMasterSheet(ss) {
   sheet.setColumnWidth(1, 50);
   sheet.setColumnWidth(4, 250);
   sheet.setColumnWidth(8, 200);
-  sheet.getRange('E2:E1000').setNumberFormat('"$"#,##0.00');
+  // Format entire col E as currency (applied before deleteRows so it persists on the column itself)
+  sheet.getRange(1, 5, sheet.getMaxRows(), 1).setNumberFormat('"$"#,##0.00');
   sheet.deleteRows(2, sheet.getMaxRows() - 1);
   sheet.deleteColumns(headers.length + 1, sheet.getMaxColumns() - headers.length);
 
-  // Conditional formatting: STATUS col U=21 — green if COMPLETED
   const statusRule = SpreadsheetApp.newConditionalFormatRule()
     .whenTextEqualTo('COMPLETED')
     .setBackground('#00b050')
@@ -600,7 +814,9 @@ function createClaimsDataSheet(ss) {
     'No.', 'Finance D Name', 'Finance D Matric No.', 'Finance D Phone No.',
     'Claimer Name', 'Claimer Matric No.', 'Claimer Phone No.', 'Email Address',
     'Portfolio', 'CCA', 'Claim Description', 'Total Claim Amount', 'Date',
-    'Reference Code', 'WBS Account Name', 'WBS No.', 'Remarks', 'Other Emails Involved'
+    'Reference Code', 'WBS Account Name', 'WBS No.', 'Remarks', 'Other Emails Involved',
+    'Filled By',      // NEW — col S (index 18)
+    'Processed By'    // NEW — col T (index 19)
   ];
   
   const receiptHeaders = [
@@ -671,7 +887,7 @@ function createAddClaimTemplate(ss) {
     .setFontWeight('bold')
     .setHorizontalAlignment('center');
 
-  // FIX 2: Format I5 as DD/MM/YYYY (Timestamp cell in the pasted form response row)
+  // Format timestamp cell
   sheet.getRange('I5').setNumberFormat('DD/MM/YYYY');
   
   // Claim info section header
@@ -681,45 +897,64 @@ function createAddClaimTemplate(ss) {
     .setFontColor('#ffffff')
     .setFontWeight('bold');
   
-  // Manual input fields start at row 8
+  // -------------------------------------------------------------------------
+  // Manual input fields start at row 8.
+  //
+  // Form response row 5 column mapping (1-based, NO Processed/Error cols pasted):
+  //   A=1  Timestamp
+  //   B=2  Portfolio
+  //   C=3  CCA
+  //   D=4  Claim Description
+  //   E=5  Other Emails
+  //   F=6  Remarks
+  //   G=7  Filled By  ← NEW
+  //
+  // Receipt blocks start at col H (col index 8, 1-based):
+  //   R1 block start = 8  (Desc=8, Company=9, Date=10, ReceiptNo=11, Amount=12, MoreReceipts=13)
+  //   R2 block start = 14
+  //   R3 block start = 20
+  //   R4 block start = 26
+  //   R5 block start = 32  (no MoreReceipts, only 5 cols)
+  //
+  // File upload columns (appended by Google Forms at end of sheet):
+  //   R1 Softcopy=37, R1 Bank=38
+  //   R2 Softcopy=39, R2 Bank=40
+  //   R3 Softcopy=41, R3 Bank=42
+  //   R4 Softcopy=43, R4 Bank=44
+  //   R5 Softcopy=45, R5 Bank=46
+  // -------------------------------------------------------------------------
+
   const startRow = 8;
   const fields = [
-    // B8: Finance D Name — from Config B3
-    ['Finance D Name', '=IF($A$5<>"",\'Config\'!$B$3,"")'],
-    // B9: Finance D Matric No. — from Config B4
-    ['Finance D Matric No.', '=IF($A$5<>"",\'Config\'!$B$4,"")'],
-    // B10: Finance D Phone No. — from Config B5
-    ['Finance D Phone No.', '=IF($A$5<>"",\'Config\'!$B$5,"")'],
-    // B11: Claimer Name — VLOOKUP by CCA (B16) from Identifier Data
-    ['Claimer Name', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$C,2,FALSE),"Name not in list"),"")'],
-    // B12: Claimer Matric No.
-    ['Claimer Matric No.', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$D,3,FALSE),"Not in list"),"")'],
-    // B13: Claimer Phone No.
-    ['Claimer Phone No.', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$E,4,FALSE),"Not in list"),"")'],
-    // B14: Email Address
-    ['Email Address', '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$F,5,FALSE),"Not in list"),"")'],
-    // B15: Portfolio — from form response col B (Timestamp=A, Portfolio=B)
-    ['Portfolio', '=IF($A$5<>"",B5,"")'],
-    // B16: CCA — from form response col C
-    ['CCA', '=IF($A$5<>"",C5,"")'],
-    // B17: Claim Description — from form response col D
-    ['Claim Description', '=IF($A$5<>"",D5,"")'],
-    // B18: Total Claim Amount
-    ['Total Claim Amount', '=IF($A$5<>"",SUM(E16,G16,I16,K16,M16),"")'],
-    // B19: Date — FIX 2: formatted as DD/MM/YYYY
-    ['Date', '=IF($A$5<>"",TEXT(TODAY(),"DD/MM/YYYY"),"")'],
-    // FIX 1: Reference Code — AY-Portfolio-CCA-No. (zero-padded 3 digits)
-    ['Reference Code', '=IF($A$5<>"",CONCATENATE(\'Config\'!$B$2,"-",UPPER($B$15),"-",UPPER($B$16),"-",TEXT(COUNTIF(\'Master Sheet\'!$C:$C,$B$16)+1,"000")),"")'],
-    ['WBS Account Name', ''],
-    ['WBS No.', '=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "H-404-00-000003", "Managed by Hall Fund", "H-404-00-000004", "Master Fund", "E-404-10-0001-01", "Master Fund (RHMP)", "E-404-10-0001-07"),"")'],
-    // B23: Remarks — from form response col F
-    ['Remarks', '=IF($A$5<>"",F5,"")'],
-    // B24: Other Emails Involved — from form response col E
+    ['Finance D Name',        '=IF($A$5<>"",\'Config\'!$B$3,"")'],
+    ['Finance D Matric No.',  '=IF($A$5<>"",\'Config\'!$B$4,"")'],
+    ['Finance D Phone No.',   '=IF($A$5<>"",\'Config\'!$B$5,"")'],
+    ['Claimer Name',          '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$C,2,FALSE),"Name not in list"),"")'],
+    ['Claimer Matric No.',    '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$D,3,FALSE),"Not in list"),"")'],
+    ['Claimer Phone No.',     '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$E,4,FALSE),"Not in list"),"")'],
+    ['Email Address',         '=IF($A$5<>"",IFNA(VLOOKUP($B$16,\'Identifier Data\'!$B:$F,5,FALSE),"Not in list"),"")'],
+    // B15: Portfolio — form col B (2)
+    ['Portfolio',             '=IF($A$5<>"",B5,"")'],
+    // B16: CCA — form col C (3)
+    ['CCA',                   '=IF($A$5<>"",C5,"")'],
+    // B17: Claim Description — form col D (4)
+    ['Claim Description',     '=IF($A$5<>"",D5,"")'],
+    ['Total Claim Amount',    '=IF($A$5<>"",SUM(E16,G16,I16,K16,M16),"")'],
+    ['Date',                  '=IF($A$5<>"",TEXT(TODAY(),"DD/MM/YYYY"),"")'],
+    ['Reference Code',        '=IF($A$5<>"",CONCATENATE(\'Config\'!$B$2,"-",UPPER($B$15),"-",UPPER($B$16),"-",TEXT(COUNTIF(\'Master Sheet\'!$C:$C,$B$16)+1,"000")),"")'],
+    ['WBS Account Name',      ''],
+    ['WBS No.',               '=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "H-404-00-000003", "Managed by Hall Fund", "H-404-00-000004", "Master Fund", "E-404-10-0001-01", "Master Fund (RHMP)", "E-404-10-0001-07"),"")'],
+    // B23: Remarks — form col F (6)
+    ['Remarks',               '=IF($A$5<>"",F5,"")'],
+    // B24: Other Emails Involved — form col E (5)
     ['Other Emails Involved', '=IF($A$5<>"",E5,"")'],
+    // B25: Filled By — form col G (7)  ← NEW
+    ['Filled By',             '=IF($A$5<>"",G5,"")'],
     ['', ''],
-    ['WBS Account Short Form', '=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "SA", "Managed by Hall Fund", "MBH", "Master Fund", "MF", "Master Fund (RHMP)", "MF (RHMP)"),"")']
+    ['WBS Account Short Form','=IF($B$21<>"",SWITCH($B$21, "Student Activity Fund", "SA", "Managed by Hall Fund", "MBH", "Master Fund", "MF", "Master Fund (RHMP)", "MF (RHMP)"),"")']
   ];
 
+  // ---- WBS Account dropdown ----
   const wbsAccountOptions = [
     'Student Activity Fund',
     'Managed by Hall Fund',
@@ -735,6 +970,7 @@ function createAddClaimTemplate(ss) {
 
   sheet.getRange('B21').setDataValidation(wbsRule).setHorizontalAlignment('center');
 
+  // ---- Category dropdown ----
   const categoryOptions = [
     'Office Supplies', 'Consumables', 'Sports & Cultural Materials',
     'Other fees (Others)', 'Professional fees', 'Bank Charges',
@@ -763,37 +999,54 @@ function createAddClaimTemplate(ss) {
     .setAllowInvalid(false)
     .setHelpText('Select GST code')
     .build();
-  
+
+  // ---- Write claim information fields ----
   fields.forEach((field, i) => {
     sheet.getRange(startRow + i, 1)
       .setValue(field[0])
       .setFontWeight('bold');
     if (field[1]) {
       sheet.getRange(startRow + i, 2)
-      .setFormula(field[1])
-      .setHorizontalAlignment('center');
+        .setFormula(field[1])
+        .setHorizontalAlignment('center');
     }
   });
-  
+
+  // ---- "Processed By" dropdown (row 26, i.e. startRow + fields.length - 1 + 1) ----
+  // fields array has 20 entries (indices 0–19), so last field is at row startRow+19 = 27.
+  // "Processed By" label goes at row 28.
+  // Adjust: fields length = 20, so last field row = 8+19 = 27. Processed By = row 28.
+  const processedByRow = startRow + fields.length;  // row 28
+  sheet.getRange(processedByRow, 1)
+    .setValue('Processed By')
+    .setFontWeight('bold');
+
+  // Data validation sourced from Finance Team column A
+  // Null-safe: Finance Team sheet must exist (created before this function in setup)
+  const financeTeamSheet = ss.getSheetByName('Finance Team');
+  const processedByValidation = SpreadsheetApp.newDataValidation();
+  if (financeTeamSheet) {
+    processedByValidation.requireValueInRange(financeTeamSheet.getRange('A2:A'), true);
+  } else {
+    processedByValidation.requireValueInList(['(Add names to Finance Team sheet)'], true);
+  }
+  const processedByRule = processedByValidation
+    .setAllowInvalid(false)
+    .setHelpText('Select the Finance Team member who processed this claim')
+    .build();
+
+  sheet.getRange(processedByRow, 2)
+    .setDataValidation(processedByRule)
+    .setHorizontalAlignment('center');
+
+  // ---- RECEIPT SECTIONS ----
   const cols = ['D', 'F', 'H', 'J', 'L'];
   const receiptLabels = ['RECEIPT 1', 'RECEIPT 2', 'RECEIPT 3', 'RECEIPT 4', 'RECEIPT 5'];
-  // Column positions in Form Responses row 5 (1-indexed):
-  // Column positions in Form Responses row 5 (1-indexed, NO Processed/Error cols pasted):
-  // A=1(Timestamp) B=2(Portfolio) C=3(CCA) D=4(ClaimDesc) E=5(OtherEmails) F=6(Remarks)
-  // Receipt blocks (6 cols each: Desc, Company, Date, ReceiptNo, Amount, MoreReceipts?):
-  //   R1=7, R2=13, R3=19, R4=25, R5=31 (R5 no MoreReceipts, only 5 cols)
-  // File uploads at the end:
-  // File uploads at the end:
-  //   R1 Softcopy=36, R1 Bank=37, R2 Softcopy=38, R2 Bank=39,
-  //   R3 Softcopy=40, R3 Bank=41, R4 Softcopy=42, R4 Bank=43,
-  //   R5 Softcopy=44, R5 Bank=45
-  //   R3 Softcopy=46, R3 Bank=47, R4 Softcopy=48, R4 Bank=49,
-  //   R5 Softcopy=50, R5 Bank=51
-  //   R3 Softcopy=48, R3 Bank=49, R4 Softcopy=50, R4 Bank=51,
-  //   R5 Softcopy=52, R5 Bank=53
-  const formColumnStarts = [7, 13, 19, 25, 31];
-  const softcopyColumns = [36, 38, 40, 42, 44];
-  const bankColumns     = [37, 39, 41, 43, 45];
+
+  // Updated column positions reflecting the new "Filled By" column (col G=7 in form response):
+  const formColumnStarts = [8, 14, 20, 26, 32];
+  const softcopyColumns  = [37, 39, 41, 43, 45];
+  const bankColumns      = [38, 40, 42, 44, 46];
   
   cols.forEach((col, i) => {
     sheet.getRange(`${col}7`)
@@ -805,18 +1058,17 @@ function createAddClaimTemplate(ss) {
     const descColLetter = String.fromCharCode(cols[i].charCodeAt(0) + 1);
     const descCell = `${descColLetter}${startRow + 1}`;
     const receiptFields = [
-      ['DR/CR', `=IF(${descCell}="","","DR")`],
-      ['Description', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]},FALSE))`],
-      ['Category', ''],
-      ['Category Code', ''],
-      ['GST Code', `=IF(${descCell}="","","IE")`],
-      ['Company', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+1},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+1},FALSE))`],
-      // FIX 2: Receipt date fields formatted as DD/MM/YYYY
-      ['Date', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE)),"",TEXT(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE),"DD/MM/YYYY"))`],
-      ['Receipt No.', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+3},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+3},FALSE))`],
-      ['Amount', `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+4},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+4},FALSE))`],
-      ['Softcopy Link', `=IF(ISBLANK(INDIRECT("R5C"&${softcopyColumns[i]},FALSE)),"",INDIRECT("R5C"&${softcopyColumns[i]},FALSE))`],
-      ['Bank Link', `=IF(ISBLANK(INDIRECT("R5C"&${bankColumns[i]},FALSE)),"",INDIRECT("R5C"&${bankColumns[i]},FALSE))`]
+      ['DR/CR',        `=IF(${descCell}="","","DR")`],
+      ['Description',  `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]},FALSE))`],
+      ['Category',     ''],
+      ['Category Code',''],
+      ['GST Code',     `=IF(${descCell}="","","IE")`],
+      ['Company',      `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+1},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+1},FALSE))`],
+      ['Date',         `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE)),"",TEXT(INDIRECT("R5C"&${formColumnStarts[i]+2},FALSE),"DD/MM/YYYY"))`],
+      ['Receipt No.',  `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+3},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+3},FALSE))`],
+      ['Amount',       `=IF(ISBLANK(INDIRECT("R5C"&${formColumnStarts[i]+4},FALSE)),"",INDIRECT("R5C"&${formColumnStarts[i]+4},FALSE))`],
+      ['Softcopy Link',`=IF(ISBLANK(INDIRECT("R5C"&${softcopyColumns[i]},FALSE)),"",INDIRECT("R5C"&${softcopyColumns[i]},FALSE))`],
+      ['Bank Link',    `=IF(ISBLANK(INDIRECT("R5C"&${bankColumns[i]},FALSE)),"",INDIRECT("R5C"&${bankColumns[i]},FALSE))`]
     ];
     
     receiptFields.forEach((field, j) => {
@@ -880,17 +1132,38 @@ function createAddClaimTemplate(ss) {
   sheet.setColumnWidth(1, 150);
   sheet.setColumnWidth(2, 300);
 
+  // ---- Number formatting for currency cells ----
+  // B18 = Total Claim Amount
+  sheet.getRange('B18').setNumberFormat('"$"#,##0.00');
+  // Receipt amount cells: col E/G/I/K/M row 16 (Amount field, j=8 in receiptFields, startRow+8=16)
+  ['E16','G16','I16','K16','M16'].forEach(cell => {
+    sheet.getRange(cell).setNumberFormat('"$"#,##0.00');
+  });
+
+  // ---- Conditional formatting ----
   let rules = sheet.getConditionalFormatRules();
 
-  const emailRequiredCells = ['B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22','B23','B24'];
+  const emailRequiredCells = [
+    'B8','B9','B10','B11','B12','B13','B14','B15','B16','B17',
+    'B18','B19','B20','B21','B22','B23','B24','B25'
+  ];
   emailRequiredCells.forEach(cell => {
     const rule = SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied(`=AND($B$14<>"", ${cell}="")`)
+      .whenFormulaSatisfied(`=AND($A$5<>"", ${cell}="")`)
       .setBackground('#f4cccc')
       .setRanges([sheet.getRange(cell)])
       .build();
     rules.push(rule);
   });
+
+  // B28 = Processed By — highlight red when A5 is filled but B28 is empty
+  rules.push(
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=AND($A$5<>"",B28="")')
+      .setBackground('#f4cccc')
+      .setRanges([sheet.getRange('B28')])
+      .build()
+  );
 
   const descriptionColumns = ['E', 'G', 'I', 'K', 'M'];
   descriptionColumns.forEach(col => {
@@ -907,6 +1180,7 @@ function createAddClaimTemplate(ss) {
 
   sheet.setConditionalFormatRules(rules);
   
+  // ---- Create protected template copy ----
   let templateSheet = ss.getSheetByName('Claim Data Template');
 
   if (templateSheet) {
@@ -950,20 +1224,48 @@ function createIdentifierDataSheet(ss) {
   }
   
   sheet = ss.insertSheet('Identifier Data', 4);
-  
-  const data = [
-    ['Portfolio', 'CCA', 'Name', 'Matric', 'Phone Number', 'Email Address']
-  ];
-  
-  const range = sheet.getRange(1, 1, 1, 6);
-  range.setValues(data).setHorizontalAlignment('center');
-  
+
+  // Header row
   sheet.getRange(1, 1, 1, 6)
+    .setValues([['Portfolio', 'CCA', 'Name', 'Matric', 'Phone Number', 'Email Address']])
     .setBackground('#4a86e8')
     .setFontColor('#ffffff')
     .setFontWeight('bold')
     .setHorizontalAlignment('center');
-  
+
+  // Autofill Portfolio and CCA columns from CCA_DEPARTMENTS constant
+  const rows = [];
+  Object.keys(CCA_DEPARTMENTS).forEach(portfolio => {
+    CCA_DEPARTMENTS[portfolio].forEach(cca => {
+      rows.push([portfolio, cca, '', '', '', '']);
+    });
+  });
+
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+    // Left-align Portfolio and CCA; center the rest
+    sheet.getRange(2, 1, rows.length, 2).setHorizontalAlignment('left');
+    sheet.getRange(2, 3, rows.length, 4).setHorizontalAlignment('center');
+  }
+
+  // Delete unused columns beyond F and unused rows beyond the data
+  const totalRows = sheet.getMaxRows();
+  const totalCols = sheet.getMaxColumns();
+  if (totalCols > 6) sheet.deleteColumns(7, totalCols - 6);
+  const usedRows = 1 + rows.length;
+  if (totalRows > usedRows) sheet.deleteRows(usedRows + 1, totalRows - usedRows);
+
+  // Column widths
+  sheet.setColumnWidth(1, 150);
+  sheet.setColumnWidth(2, 200);
+  sheet.setColumnWidth(3, 200);
+  sheet.setColumnWidth(4, 150);
+  sheet.setColumnWidth(5, 150);
+  sheet.setColumnWidth(6, 220);
+
+  // Freeze header row
+  sheet.setFrozenRows(1);
+
   return sheet;
 }
 
@@ -1015,7 +1317,7 @@ function loadConfigFromSheet(ss) {
 }
 
 // ============================================================================
-// PART 3: MENU & UTILITY FUNCTIONS
+// MENU & UTILITY FUNCTIONS
 // ============================================================================
 
 function onOpen() {
@@ -1226,8 +1528,8 @@ function buildClaimEmailHtml(payload) {
   const tdLabel = 'padding: 6px 10px; border: 1px solid #ccc; background-color: #f5f5f5; font-weight: bold; width: 40%;';
   const tdValue = 'padding: 6px 10px; border: 1px solid #ccc;';
 
-  // Build CC line for display in email body
-  const ccEmails = ['rh.finance@u.nus.edu'];
+  // CC display list: always includes 68findirector.rh@gmail.com, plus any other emails involved
+  const ccEmails = ['68findirector.rh@gmail.com'];
   if (payload.otherEmails) {
     payload.otherEmails.split(',').map(e => e.trim()).filter(Boolean).forEach(e => ccEmails.push(e));
   }
@@ -1243,7 +1545,7 @@ function buildClaimEmailHtml(payload) {
 
       <p>
         <strong>To:</strong> rh.finance@u.nus.edu<br>
-        ${ccEmails.length > 1 ? `<strong>CC:</strong> ${ccEmails.slice(1).join(', ')}<br>` : ''}
+        <strong>CC:</strong> ${ccEmails.join(', ')}<br>
         <strong>Subject:</strong> ${payload.referenceCode}
       </p>
 
@@ -1285,9 +1587,40 @@ function resetAddClaimSheet(spreadsheet, templateSheet) {
 }
 
 // ============================================================================
-// PART 4: CORE WORKFLOW FUNCTIONS (UNCHANGED)
+// CORE WORKFLOW FUNCTIONS
 // ============================================================================
 
+/**
+ * addClaim — reads Add Claim sheet and appends a row to Claims Data and Master Sheet.
+ *
+ * Claims Data column layout (0-indexed):
+ *   0  No.
+ *   1  Finance D Name
+ *   2  Finance D Matric No.
+ *   3  Finance D Phone No.
+ *   4  Claimer Name
+ *   5  Claimer Matric No.
+ *   6  Claimer Phone No.
+ *   7  Email Address
+ *   8  Portfolio
+ *   9  CCA
+ *   10 Claim Description
+ *   11 Total Claim Amount
+ *   12 Date
+ *   13 Reference Code
+ *   14 WBS Account Name
+ *   15 WBS No.
+ *   16 Remarks
+ *   17 Other Emails Involved
+ *   18 Filled By      ← NEW (col S)
+ *   19 Processed By   ← NEW (col T)
+ *   20+ Receipt fields
+ *
+ * Add Claim cell references:
+ *   B8–B24  = base claim fields (Finance D Name … Other Emails)
+ *   B25     = Filled By
+ *   B28     = Processed By  (row = startRow + fields.length = 8 + 20 = 28)
+ */
 function addClaim() {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const templateSheet = getSheetOrThrow(spreadsheet, CONFIG.SHEETS.TEMPLATE);
@@ -1303,6 +1636,8 @@ function addClaim() {
   const rowClaimsData = [
     claimsDataSheet.getLastRow(),
     ...getCellValues(addClaimSheet, CONFIG.ADD_CLAIM.CLAIM_RANGES),
+    addClaimSheet.getRange('B25').getValue(),   // Filled By
+    addClaimSheet.getRange('B28').getValue(),   // Processed By
     ...getCellValues(addClaimSheet, receiptRanges)
   ];
 
@@ -1320,7 +1655,6 @@ function addClaim() {
     .setHorizontalAlignment('center')
     .setWrap(false);
   masterSheet.appendRow(rowMasterData);
-  // Clear header formatting that bleeds into new rows
   const newMasterRow = rowMasterData[0] + 1;
   masterSheet.getRange(newMasterRow, 1, 1, masterSheet.getLastColumn())
     .setBackground(null)
@@ -1390,17 +1724,11 @@ function generateEmail() {
     const attachments = collectReceiptAttachments(row, payload.referenceCode);
     const htmlTemplate = buildClaimEmailHtml({ ...payload, receiptListHtml });
 
-    // Build CC list: other emails involved + rh.finance@u.nus.edu
-    const ccList = ['rh.finance@u.nus.edu'];
-    if (payload.otherEmails) {
-      payload.otherEmails.split(',').map(e => e.trim()).filter(Boolean).forEach(e => ccList.push(e));
-    }
-
-    // Send to claimer with confirmation message
+    // Send only to the claimer — no CC. The email body contains the full
+    // To/CC instructions for the claimer to forward themselves.
     GmailApp.sendEmail(payload.recipientEmail, payload.referenceCode, "", {
       htmlBody: htmlTemplate,
-      attachments: attachments,
-      cc: ccList.join(', ')
+      attachments: attachments
     });
 
     markMasterStatus(masterSheet, rowIndex, MASTER_COL.EMAILS_SENT);
@@ -1592,7 +1920,7 @@ function getOrCreateFolder(folderName, parentFolder) {
 }
 
 // ============================================================================
-// PART 5: DOCUMENT GENERATION FUNCTIONS (UNCHANGED)
+// DOCUMENT GENERATION FUNCTIONS
 // ============================================================================
 
 function generateLOA(claimNo, row, folder) {
@@ -1846,13 +2174,11 @@ function getConfigValue(key) {
 }
 
 // ============================================================================
-// PART 6: CONFIGURATION CONSTANTS
+// CONFIGURATION CONSTANTS
 // ============================================================================
 
 /**
  * Portfolio → CCA mapping.
- * Edit this object OR edit the "Form Options" sheet directly
- * and use "Recreate Claims Form" from the menu to update the form.
  */
 const CCA_DEPARTMENTS = {
   "Culture": [
@@ -1860,11 +2186,11 @@ const CCA_DEPARTMENTS = {
     "RHebels", "RHythm", "RH Voices", "Culture Comm"
   ],
   "Welfare": [
-    "Welfare Comm", "RVC SP", "RVC Children", "RVC Pioneers",
+    "Welfare", "Welfare Comm", "RVC SP", "RVC Children", "RVC Pioneers",
     "RVC Special Needs", "HeaRHtfelt", "Green Comm"
   ],
   "Sports": [
-    "Badminton M", "Basketball M", "Floorball M", "Handball M",
+    "Sports", "Badminton M", "Basketball M", "Floorball M", "Handball M",
     "Soccer M", "Swimming M", "Squash M", "Sepak Takraw M",
     "Tennis M", "Touch Rugby M", "Table Tennis M", "Volleyball M",
     "SMC", "Softball", "Track", "Road Relay", "Frisbee",
@@ -1873,47 +2199,52 @@ const CCA_DEPARTMENTS = {
     "Tennis F", "Touch Rugby F", "Table Tennis F", "Volleyball F"
   ],
   "Social": [
-    "Block 2 Comm", "Block 3 Comm", "Block 4 Comm", "Block 5 Comm",
+    "Social", "Block 2 Comm", "Block 3 Comm", "Block 4 Comm", "Block 5 Comm",
     "Block 6 Comm", "Block 7 Comm", "Block 8 Comm", "Social Comm", "RHSafe"
   ],
-  "VPI": ["Bash", "DND", "AEAC"],
+  "VPI": ["VPI", "Bash", "DND", "AEAC"],
   "RHMP": [
-    "RHMP Producers", "RHMP Directors", "RHMP Ensemble", "RHMP Stage Managers",
+    "RHMP", "RHMP Producers", "RHMP Directors", "RHMP Ensemble", "RHMP Stage Managers",
     "RHMP Sets", "RHMP Costumes", "RHMP Relations", "RHMP Publicity", "RHMP EM",
     "RHMP Graphic Design", "RHMP Musicians", "RHMP Composers"
   ],
   "Media": [
-    "BOP", "Phoenix Studios", "Phoenix Press", "AnG",
+    "Media", "BOP", "Phoenix Studios", "Phoenix Press", "AnG",
     "Tech Crew", "ComMotion", "RH Devs"
   ],
-  "HGS": ["Vacation Storage", "Auditor", "Finance", "Secretariat"],
-  "VPE": ["HPB", "RHOC", "RHAG", "RFLAG"]
+  "HGS": ["HGS", "Vacation Storage", "Auditor", "Finance", "Secretariat"],
+  "VPE": ["VPE", "HPB", "RHOC", "RHAG", "RFLAG"]
 };
 
 const CONFIG = {
   MENU: {
     TITLE: 'Claims Tools',
     ITEMS: [
-      { label: 'Add Claim', handler: 'addClaim' },
+      { label: 'Add Claim',       handler: 'addClaim' },
       { label: 'Generate Emails', handler: 'generateEmail' },
-      { label: 'Generate Forms', handler: 'generateForm' },
-      { label: 'Compile Forms', handler: 'compileForms' },
+      { label: 'Generate Forms',  handler: 'generateForm' },
+      { label: 'Compile Forms',   handler: 'compileForms' },
     ]
   },
   SHEETS: {
-    TEMPLATE: 'Claim Data Template',
-    ADD_CLAIM: 'Add Claim',
-    CLAIMS_DATA: 'Claims Data',
-    MASTER: 'Master Sheet',
-    FORM_RESPONSES: 'Form Responses'
+    TEMPLATE:       'Claim Data Template',
+    ADD_CLAIM:      'Add Claim',
+    CLAIMS_DATA:    'Claims Data',
+    MASTER:         'Master Sheet',
+    FORM_RESPONSES: 'Form Responses',
+    FINANCE_TEAM:   'Finance Team',
+    CCA_SPENDING:   'CCA Spending'
   },
   ADD_CLAIM: {
+    // B8–B24: the 17 base claim fields (Finance D Name → Other Emails Involved)
     CLAIM_RANGES: [
-      'B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22','B23','B24'
+      'B8','B9','B10','B11','B12','B13','B14',
+      'B15','B16','B17','B18','B19','B20','B21','B22','B23','B24'
     ],
+    // B25 = Filled By, B28 = Processed By — read separately in addClaim()
     RECEIPT_COLUMNS: ['E','G','I','K','M'],
     RECEIPT_ROWS: { START: 8, END: 18 },
-    MASTER_RANGES: ['B15','B16','B17','B18','B11','B13','B20','B26']
+    MASTER_RANGES: ['B15','B16','B17','B18','B11','B13','B20','B27']
   },
   MASTER_COL_EMAIL: {
     NO: 0,
@@ -1949,7 +2280,9 @@ const CONFIG = {
     WBS_NO: 15,
     REMARKS: 16,
     OTHER_EMAILS: 17,
-    DESC_START: 18
+    FILLED_BY: 18,      // NEW — col S
+    PROCESSED_BY: 19,   // NEW — col T
+    DESC_START: 20      // shifted from 18 → 20
   },
   RECEIPT: {
     COUNT: 5,
@@ -1958,20 +2291,20 @@ const CONFIG = {
   get TEMPLATE_IDS() {
     return {
       SUMMARY: getConfigValue('SUMMARY_TEMPLATE_ID') || '',
-      RFP: getConfigValue('RFP_TEMPLATE_ID') || ''
+      RFP:     getConfigValue('RFP_TEMPLATE_ID') || ''
     };
   },
   get FOLDERS() {
     return {
-      RFP_ROOT_ID: getConfigValue('RFP_FOLDER_ID') || '',
+      RFP_ROOT_ID:   getConfigValue('RFP_FOLDER_ID') || '',
       RFP_ROOT_NAME: 'RFPs'
     };
   },
   PDF: {
-    LIB_URL: 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js',
-    COMPILED_PREFIX: 'Compiled No.'
+    LIB_URL:          'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js',
+    COMPILED_PREFIX:  'Compiled No.'
   },
-  TIMEZONE: 'GMT+8',
-  DATE_FORMAT: 'dd/MM/yyyy',
+  TIMEZONE:              'GMT+8',
+  DATE_FORMAT:           'dd/MM/yyyy',
   MAX_ATTACHMENTS_BYTES: 25 * 1024 * 1024
 };
