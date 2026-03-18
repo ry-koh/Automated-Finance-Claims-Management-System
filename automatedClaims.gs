@@ -2226,7 +2226,7 @@ const CCA_DEPARTMENTS = {
     "Media", "BOP", "Phoenix Studios", "Phoenix Press", "AnG",
     "Tech Crew", "ComMotion", "RH Devs"
   ],
-  "HGS": ["HGS", "Vacation Storage", "Auditor", "Finance", "Secretariat"],
+  "HGS": ["HGS", "JCRC", "Vacation Storage", "Auditor", "Finance", "Secretariat"],
   "VPE": ["VPE", "HPB", "RHOC", "RHAG", "RFLAG"]
 };
 
