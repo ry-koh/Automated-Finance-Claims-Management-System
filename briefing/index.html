@@ -53,15 +53,6 @@
     pointer-events: all;
     transform: translateY(0);
   }
-  @media (max-width: 768px) {
-    .slide {
-      padding: 80px 20px 100px;
-      justify-content: center;
-      align-items: center;
-    }
-  }
-
-  /* COVER */
   .slide-cover {
     background: radial-gradient(ellipse 80% 60% at 50% 40%, #061e2b 0%, var(--bg) 70%);
     text-align: center;
@@ -239,7 +230,13 @@
     color: var(--muted);
     text-transform: uppercase;
   }
-  @media (max-width: 768px) { .mobile-header { display: block; } }
+  @media (max-width: 768px) {
+    .mobile-header { display: block; }
+    /* Header is ~38px, nav bar is ~68px — pad slides to clear both */
+    .slide { padding: 54px 20px 84px; justify-content: flex-start; align-items: center; }
+    /* Cover centres vertically since it has little content */
+    .slide-cover { justify-content: center; padding-top: 54px; padding-bottom: 84px; }
+  }
 
   /* TG mockup */
   .tg-mockup { background: #0d1a22; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
