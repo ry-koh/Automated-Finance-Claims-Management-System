@@ -233,9 +233,16 @@
   @media (max-width: 768px) {
     .mobile-header { display: block; }
     .slide {
-      padding: 80px 20px 90px;
+      top: 38px;        /* sit below fixed header */
+      bottom: 70px;     /* sit above fixed nav bar */
+      left: 0; right: 0;
+      inset: unset;
+      position: absolute;
+      padding: 24px 20px 24px;
       justify-content: flex-start;
       align-items: center;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
   }
 
@@ -559,8 +566,16 @@
     function setHeightVars() {
       var header = document.querySelector('.mobile-header');
       var nav    = document.querySelector('.nav');
-      if (header) document.documentElement.style.setProperty('--header-h', header.getBoundingClientRect().height + 'px');
-      if (nav)    document.documentElement.style.setProperty('--nav-h',    nav.getBoundingClientRect().height    + 'px');
+      var hh = header ? header.getBoundingClientRect().height : 38;
+      var nh = nav    ? nav.getBoundingClientRect().height    : 70;
+      document.documentElement.style.setProperty('--header-h', hh + 'px');
+      document.documentElement.style.setProperty('--nav-h', nh + 'px');
+      if (window.innerWidth <= 768) {
+        document.querySelectorAll('.slide').forEach(function(s) {
+          s.style.top    = hh + 'px';
+          s.style.bottom = nh + 'px';
+        });
+      }
     }
     setHeightVars();
     setTimeout(setHeightVars, 100);
