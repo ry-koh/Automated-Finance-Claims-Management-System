@@ -252,9 +252,9 @@
   .email-note { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 14px 12px; font-style: italic; }
 
   /* Ref code visual */
-  .ref-code-display { background: #061014; border: 1px solid var(--accent2); border-radius: 10px; padding: 14px 16px; width: 100%; }
-  .ref-code-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 12px; }
-  .ref-segment { border-radius: 6px; padding: 5px 10px; font-family: 'DM Mono', monospace; font-size: clamp(11px, 2.5vw, 15px); font-weight: 500; color: #fff; }
+  .ref-code-display { background: #061014; border: 1px solid var(--accent2); border-radius: 10px; padding: 16px; width: 100%; }
+  .ref-code-row { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; margin-bottom: 12px; }
+  .ref-segment { border-radius: 6px; padding: 6px 8px; font-family: 'DM Mono', monospace; font-size: clamp(10px, 2vw, 16px); font-weight: 500; color: #fff; text-align: center; }
   .ref-segment.year { background: rgba(79,156,249,0.2); border: 1px solid rgba(79,156,249,0.3); }
   .ref-segment.portfolio { background: rgba(0,201,167,0.15); border: 1px solid rgba(0,201,167,0.3); }
   .ref-segment.cca { background: rgba(247,208,96,0.1); border: 1px solid rgba(247,208,96,0.3); }
@@ -274,18 +274,18 @@
   .reimb-arrow { text-align: center; color: var(--muted); font-size: 14px; line-height: 1; margin: 2px 0 2px 22px; }
 
   /* Cheat sheet mobile cards */
-  .cheat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; width: 100%; }
+  .cheat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; width: 100%; }
   .cheat-card.you { border-color: var(--accent); background: #0a2820; }
-  .cheat-card-header { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--accent); letter-spacing: 2px; margin-bottom: 8px; }
+  .cheat-card-header { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; }
   .cheat-card.them .cheat-card-header { color: var(--muted); }
-  .cheat-card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
-  .cheat-card-items { display: flex; flex-direction: column; gap: 4px; }
-  .cheat-card-item { font-size: 12px; color: var(--muted); display: flex; gap: 8px; }
+  .cheat-card-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+  .cheat-card-items { display: flex; flex-direction: column; gap: 6px; }
+  .cheat-card-item { font-size: 13.5px; color: var(--muted); display: flex; gap: 8px; line-height: 1.4; }
   .cheat-card-item::before { content: '•'; color: var(--accent); flex-shrink: 0; }
-  .cheat-card-footer { font-family: 'DM Mono', monospace; font-size: 9px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .cheat-card-footer { font-family: 'DM Mono', monospace; font-size: 10px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
   .cheat-card.you .cheat-card-footer { color: var(--accent); }
   .cheat-card.them .cheat-card-footer { color: var(--muted); }
-  .cheat-arrow { text-align: center; color: var(--muted); font-size: 22px; padding: 2px 0; line-height: 1; }
+  .cheat-arrow { text-align: center; color: var(--muted); font-size: 22px; padding: 4px 0; line-height: 1; }
 </style>
 </head>
 <body>
@@ -616,14 +616,16 @@
         <div class="email-body">
           <p style="margin-bottom:6px;">Hi [First Name],</p>
           <p style="margin-bottom:6px;">We have received your claim. After sending the email below, this confirms your claim is being processed.</p>
-          <p>Please copy and paste everything below the line into a new email:</p>
+          <p style="margin-bottom:10px;">Please copy and paste everything below the line into a new email:</p>
+          <div style="line-height:2;font-size:12px;margin-bottom:4px;">
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">To: </span><span style="color:var(--accent2);">rh.finance@u.nus.edu</span></div>
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">CC: </span><span style="color:var(--accent2);">68findirector.rh@gmail.com, [others if any]</span></div>
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">Subject: </span><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;word-break:break-all;">2526-WELFARE-WELFARE COMM-001</span></div>
+          </div>
+          <div style="border-top:2px solid #1e2838;margin:10px 0 6px;"></div>
         </div>
         <div class="email-copy-box">
           <div class="email-copy-label">COPY THIS SECTION</div>
-          <div class="email-copy-line">To: rh.finance@u.nus.edu</div>
-          <div class="email-copy-line">CC: 68findirector.rh@gmail.com, [others if any]</div>
-          <div class="email-copy-line gold">Subject: 2526-WELFARE-WELFARE COMM-001</div>
-          <div class="email-copy-divider"></div>
           <div class="email-copy-body">
             <p>Dear Jun Kiat, attached is the claims for Disc Claim.</p>
             <p>I, [YOUR FULL NAME], [MATRIC], hereby authorise Jun Kiat to collect reimbursement on my behalf.</p>
@@ -663,23 +665,20 @@
     <div class="slide-title">Your <span>Reference Code</span> — Keep It Handy</div>
   </div>
   <div class="ref-code-display">
-    <div class="ref-code-row">
-      <div class="ref-segment year">2526</div>
-      <div class="ref-sep">—</div>
-      <div class="ref-segment portfolio">WELFARE</div>
-      <div class="ref-sep">—</div>
-      <div class="ref-segment cca">WELFARE COMM</div>
-      <div class="ref-sep">—</div>
-      <div class="ref-segment num">001</div>
+    <div class="ref-code-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:4px;margin-bottom:14px;">
+      <div class="ref-segment year" style="flex:1;text-align:center;">2526</div>
+      <div class="ref-sep" style="flex-shrink:0;">—</div>
+      <div class="ref-segment portfolio" style="flex:1;text-align:center;">WELFARE</div>
+      <div class="ref-sep" style="flex-shrink:0;">—</div>
+      <div class="ref-segment cca" style="flex:2;text-align:center;">WELFARE COMM</div>
+      <div class="ref-sep" style="flex-shrink:0;">—</div>
+      <div class="ref-segment num" style="flex:1;text-align:center;">001</div>
     </div>
-    <div class="ref-labels">
-      <span class="ref-label-item" style="color:#4f9cf9;">Academic Year</span>
-      <span class="ref-label-item" style="color:var(--muted);">·</span>
-      <span class="ref-label-item" style="color:var(--accent);">Portfolio</span>
-      <span class="ref-label-item" style="color:var(--muted);">·</span>
-      <span class="ref-label-item" style="color:var(--gold);">CCA Name</span>
-      <span class="ref-label-item" style="color:var(--muted);">·</span>
-      <span class="ref-label-item" style="color:var(--red);">Claim No.</span>
+    <div class="ref-labels" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+      <span class="ref-label-item" style="color:#4f9cf9;flex:1;text-align:center;">Academic Year</span>
+      <span class="ref-label-item" style="color:var(--accent);flex:1;text-align:center;">Portfolio</span>
+      <span class="ref-label-item" style="color:var(--gold);flex:2;text-align:center;">CCA Name</span>
+      <span class="ref-label-item" style="color:var(--red);flex:1;text-align:center;">Claim No.</span>
     </div>
   </div>
   <div class="callout blue" style="font-size:12.5px;">
@@ -918,10 +917,10 @@
 </div><!-- end deck -->
 
 <div class="nav">
-  <button class="nav-btn" id="prevBtn" onclick="goTo(current-1)">← Prev</button>
+  <button class="nav-btn" id="prevBtn">← Prev</button>
   <div class="nav-dots" id="dots"></div>
   <div class="nav-counter" id="counter">1 / 14</div>
-  <button class="nav-btn" id="nextBtn" onclick="goTo(current+1)">Next →</button>
+  <button class="nav-btn" id="nextBtn">Next →</button>
 </div>
 
 <script>
@@ -952,6 +951,9 @@
 
     isDesktop = window.innerWidth >= 769;
 
+    document.getElementById('prevBtn').addEventListener('click', function() { goTo(current - 1); });
+    document.getElementById('nextBtn').addEventListener('click', function() { goTo(current + 1); });
+
     if (isDesktop) {
       slides.forEach(function(_, i) {
         var d = document.createElement('div');
@@ -967,7 +969,6 @@
         if (e.key === 'End')  goTo(total - 1);
       });
 
-      // Touch swipe support on desktop-size tablets
       var touchStartX = 0;
       document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, { passive: true });
       document.addEventListener('touchend', function(e) {
@@ -977,7 +978,6 @@
 
       goTo(0);
     } else {
-      // On mobile: all slides visible, remove active-only constraint
       slides.forEach(function(s) {
         s.classList.add('active');
         s.style.opacity = '1';
