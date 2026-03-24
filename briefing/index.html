@@ -232,10 +232,14 @@
   }
   @media (max-width: 768px) {
     .mobile-header { display: block; }
-    /* Header is ~38px, nav bar is ~68px — pad slides to clear both */
-    .slide { padding: 54px 20px 84px; justify-content: flex-start; align-items: center; }
-    /* Cover centres vertically since it has little content */
-    .slide-cover { justify-content: center; padding-top: 54px; padding-bottom: 84px; }
+    .slide {
+      padding: calc(var(--header-h, 52px) + 16px) 20px calc(var(--nav-h, 70px) + 12px);
+      justify-content: flex-start;
+      align-items: center;
+    }
+    .slide-cover {
+      justify-content: center;
+    }
   }
 
   /* TG mockup */
@@ -553,6 +557,16 @@
     progress = document.getElementById('progress');
     current  = 0;
     total    = slides.length;
+
+    // Measure fixed UI heights and expose as CSS variables so slides pad correctly
+    function setHeightVars() {
+      var header = document.querySelector('.mobile-header');
+      var nav    = document.querySelector('.nav');
+      if (header) document.documentElement.style.setProperty('--header-h', header.getBoundingClientRect().height + 'px');
+      if (nav)    document.documentElement.style.setProperty('--nav-h',    nav.getBoundingClientRect().height    + 'px');
+    }
+    setHeightVars();
+    window.addEventListener('resize', setHeightVars);
 
     document.getElementById('prevBtn').addEventListener('click', function() { goTo(current - 1); });
     document.getElementById('nextBtn').addEventListener('click', function() { goTo(current + 1); });
