@@ -340,24 +340,31 @@
   </div>
   <div class="two-col">
     <div class="col-block">
-      <div class="tg-mockup">
-        <div class="tg-header">
-          <div style="width:30px;height:30px;border-radius:50%;background:rgba(0,201,167,0.2);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;">💬</div>
+      <!-- Telegram mockup -->
+      <div style="background:#0d1a22;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
+        <!-- TG top bar -->
+        <div style="background:linear-gradient(135deg,#0f2030,#0a1a28);padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(0,201,167,0.3),rgba(0,201,167,0.1));border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">💬</div>
           <div>
-            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);">YOUR LIAISON</div>
-            <div style="font-size:10px;color:var(--muted);">Finance Team Member</div>
+            <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);">Your Liaison</div>
+            <div style="font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;">Finance Team Member</div>
           </div>
         </div>
-        <div class="tg-bubble">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);margin-bottom:8px;letter-spacing:1px;">MESSAGE TEMPLATE</div>
-          <div><span style="color:var(--muted);">Portfolio:</span> Welfare</div>
-          <div><span style="color:var(--muted);">CCA:</span> Welfare Comm</div>
-          <div><span style="color:var(--muted);">Claim desc:</span> Welfare RHingo Claim</div>
-          <div><span style="color:var(--muted);">Others involved:</span> person1@u.nus.edu</div>
-          <div><span style="color:var(--muted);">Remarks:</span> -</div>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;">+ For each purchase: receipt photo <strong style="color:var(--text);">+</strong> bank transaction screenshot</div>
+        <!-- date stamp -->
+        <div style="text-align:center;padding:10px 0 2px;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">Today</div>
+        <!-- bubble -->
+        <div style="padding:6px 14px 14px;">
+          <div style="background:linear-gradient(135deg,#0a2820,#061810);border:1px solid rgba(0,201,167,0.25);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:12.5px;line-height:2;color:var(--text);">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);margin-bottom:10px;letter-spacing:1px;border-bottom:1px solid rgba(0,201,167,0.15);padding-bottom:6px;">MESSAGE TEMPLATE</div>
+            <div><span style="color:var(--muted);font-size:11px;">Portfolio: </span>Welfare</div>
+            <div><span style="color:var(--muted);font-size:11px;">CCA: </span>Welfare Comm</div>
+            <div><span style="color:var(--muted);font-size:11px;">Claim desc: </span>Welfare RHingo Claim</div>
+            <div><span style="color:var(--muted);font-size:11px;">Others: </span>person1&#64;u.nus.edu</div>
+            <div><span style="color:var(--muted);font-size:11px;">Remarks: </span>-</div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);color:var(--muted);font-size:11px;line-height:1.6;">📎 + For each purchase:<br>&nbsp;&nbsp;&nbsp;receipt photo <strong style="color:var(--accent);">+</strong> bank transaction screenshot</div>
+          </div>
+          <div style="text-align:right;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px;padding-right:2px;">sent ✓✓</div>
         </div>
-        <div class="tg-sent">sent ✓✓</div>
       </div>
     </div>
     <div class="col-block">
@@ -381,7 +388,7 @@
         </div>
         <div class="step">
           <div class="step-num">Receipts</div>
-          <div class="step-content"><div class="step-desc">For each purchase, send its receipt photo and its bank screenshot together. Don't send everything in a pile — your Liaison needs to match them up.</div></div>
+          <div class="step-content"><div class="step-desc">For each purchase, send its receipt photo and its bank screenshot together. Don't dump everything — your Liaison needs to match them up.</div></div>
         </div>
       </div>
       <div class="callout warn" style="font-size:12px;">
@@ -399,49 +406,64 @@
   </div>
   <div class="flex-row">
     <div style="flex:1;min-width:0;">
-      <div class="email-mockup">
-        <div class="email-chrome">
-          <div class="email-dot" style="background:#ff6b6b;opacity:0.5;"></div>
-          <div class="email-dot" style="background:#f7d060;opacity:0.5;"></div>
-          <div class="email-dot" style="background:#00c9a7;opacity:0.5;"></div>
+      <!-- Email mockup -->
+      <div style="background:#0a1018;border:1px solid #1e2a3a;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.4);font-size:12px;">
+        <!-- Chrome bar -->
+        <div style="background:#0d1520;padding:9px 14px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="width:9px;height:9px;border-radius:50%;background:#ff6b6b;opacity:0.5;"></div>
+          <div style="width:9px;height:9px;border-radius:50%;background:#f7d060;opacity:0.5;"></div>
+          <div style="width:9px;height:9px;border-radius:50%;background:#00c9a7;opacity:0.5;"></div>
           <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-left:8px;">Gmail — Inbox</span>
         </div>
-        <div class="email-field"><div class="lbl">From</div><div class="val">Finance Team Member</div></div>
-        <div class="email-field"><div class="lbl">Subject</div><div class="val gold">2526-WELFARE-WELFARE COMM-001</div></div>
-        <div class="email-body">
-          <p style="margin-bottom:6px;">Hi [First Name], we have received your claim. Please copy and paste everything below into a new email:</p>
-          <div style="line-height:2;font-size:12px;margin:8px 0 4px;">
-            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">To: </span><span style="color:var(--accent2);">rh.finance@u.nus.edu</span></div>
-            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">CC: </span><span style="color:var(--accent2);">68findirector.rh@gmail.com, [others if any]</span></div>
+        <!-- Fields -->
+        <div style="padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:10px;align-items:baseline;">
+          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);flex-shrink:0;">From</span>
+          <span style="color:var(--text);">Finance Team Member</span>
+        </div>
+        <div style="padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:10px;align-items:baseline;">
+          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);flex-shrink:0;">Subject</span>
+          <span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;word-break:break-all;">2526-WELFARE-WELFARE COMM-001</span>
+        </div>
+        <!-- Body -->
+        <div style="padding:12px 16px;color:var(--muted);line-height:1.6;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <p style="margin-bottom:8px;">Hi [First Name], we have received your claim. Please copy and paste everything below into a new email:</p>
+          <div style="background:#0d1828;border-radius:8px;padding:10px 14px;margin-bottom:8px;line-height:2;">
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">To: </span><span style="color:var(--accent2);">rh&#46;finance&#64;u&#46;nus&#46;edu</span></div>
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">CC: </span><span style="color:var(--accent2);">68findirector&#46;rh&#64;gmail&#46;com, [others if any]</span></div>
             <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">Subject: </span><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;word-break:break-all;">2526-WELFARE-WELFARE COMM-001</span></div>
           </div>
-          <div style="border-top:2px solid #1e2838;margin:8px 0 6px;"></div>
+          <div style="border-top:2px dashed rgba(255,255,255,0.08);margin-bottom:8px;"></div>
         </div>
-        <div class="email-copy-box">
-          <div class="email-copy-label">COPY THIS SECTION</div>
-          <div class="email-copy-body">
+        <!-- Copy box -->
+        <div style="margin:0;padding:12px 16px;background:linear-gradient(135deg,#061810,#04100a);border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="display:inline-block;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.25);border-radius:4px;font-family:'DM Mono',monospace;font-size:8px;color:var(--accent);padding:2px 8px;margin-bottom:10px;">COPY THIS SECTION</div>
+          <div style="font-size:11.5px;color:var(--muted);line-height:1.8;">
             <p>Dear Jun Kiat, attached is the claims for Disc Claim.</p>
             <p>I, [YOUR FULL NAME], [MATRIC], hereby authorise Jun Kiat to collect reimbursement on my behalf.</p>
             <p>PayNow: 9XXX XXXX &nbsp;|&nbsp; Total: $XX.XX</p>
           </div>
         </div>
-        <div class="email-note">Your receipts are already attached to the Finance Team email you received</div>
+        <!-- No attachments note -->
+        <div style="padding:10px 16px;background:#0d1520;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:14px;">✅</span>
+          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);letter-spacing:0.5px;">NO ATTACHMENTS NEEDED — just send the email as is</span>
+        </div>
       </div>
     </div>
-    <div style="flex:0 0 248px;display:flex;flex-direction:column;gap:10px;">
+    <div style="flex:0 0 240px;display:flex;flex-direction:column;gap:10px;">
       <div class="col-label">What you need to do</div>
       <div class="steps" style="gap:8px;">
         <div class="step">
-          <div class="step-num">1</div>
+          <div class="step-num" style="min-width:28px;">1</div>
           <div class="step-content"><div class="step-title">Create a NEW email</div><div class="step-desc">Do <strong>not</strong> reply — open a fresh compose window.</div></div>
         </div>
         <div class="step">
-          <div class="step-num">2</div>
+          <div class="step-num" style="min-width:28px;">2</div>
           <div class="step-content"><div class="step-title">Copy To, CC, Subject</div><div class="step-desc">Use the exact values shown. Don't change the subject line.</div></div>
         </div>
         <div class="step">
-          <div class="step-num">3</div>
-          <div class="step-content"><div class="step-title">Paste body &amp; send</div><div class="step-desc">Copy the dotted section, paste as your email body, send.</div></div>
+          <div class="step-num" style="min-width:28px;">3</div>
+          <div class="step-content"><div class="step-title">Paste body &amp; send</div><div class="step-desc">Copy the green section, paste as your email body, then send.</div></div>
         </div>
       </div>
       <div class="callout warn" style="font-size:11.5px;">
@@ -585,7 +607,6 @@
     document.getElementById('prevBtn').addEventListener('click', function() { goTo(current - 1); });
     document.getElementById('nextBtn').addEventListener('click', function() { goTo(current + 1); });
 
-    // Nav dots (desktop only — hidden on mobile via CSS)
     slides.forEach(function(_, i) {
       var d = document.createElement('div');
       d.className = 'nav-dot' + (i === 0 ? ' active' : '');
@@ -593,7 +614,6 @@
       dotsEl.appendChild(d);
     });
 
-    // Keyboard navigation
     document.addEventListener('keydown', function(e) {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
       if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
@@ -601,7 +621,6 @@
       if (e.key === 'End')  goTo(total - 1);
     });
 
-    // Touch swipe (works on all screen sizes)
     var touchStartX = 0;
     var touchStartY = 0;
     document.addEventListener('touchstart', function(e) {
@@ -611,7 +630,6 @@
     document.addEventListener('touchend', function(e) {
       var dx = touchStartX - e.changedTouches[0].clientX;
       var dy = touchStartY - e.changedTouches[0].clientY;
-      // Only trigger if horizontal swipe is dominant
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
         dx > 0 ? goTo(current + 1) : goTo(current - 1);
       }
