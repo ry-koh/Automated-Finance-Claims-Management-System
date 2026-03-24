@@ -29,48 +29,32 @@
     color: var(--text);
   }
 
-  @media (min-width: 769px) {
-    body { height: 100vh; overflow: hidden; }
-  }
+  body { height: 100vh; overflow: hidden; }
 
-  .deck { width: 100%; position: relative; }
-  @media (min-width: 769px) {
-    .deck { height: 100vh; }
-  }
+  .deck { width: 100%; height: 100vh; position: relative; }
 
-  /* ─── SLIDES: desktop = absolute full-screen; mobile = normal flow ─── */
+  /* ─── SLIDES: always full-screen deck ─── */
   .slide {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 52px 48px 80px;
+    padding: 52px 48px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    overflow-y: auto;
   }
-
-  @media (min-width: 769px) {
-    .slide {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(20px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      padding: 52px 48px;
-    }
-    .slide.active {
-      opacity: 1;
-      pointer-events: all;
-      transform: translateY(0);
-    }
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
   }
-
   @media (max-width: 768px) {
-    .slide {
-      padding: 40px 20px 48px;
-      min-height: 100svh;
-      border-bottom: 1px solid var(--border);
-    }
-    .slide:last-child { border-bottom: none; }
+    .slide { padding: 64px 20px 100px; }
   }
 
   /* COVER */
@@ -183,7 +167,7 @@
   .mfs-sub { font-size: 11px; color: var(--muted); }
   .mobile-flow-arrow { text-align: center; color: var(--muted); font-size: 16px; margin-bottom: 0; line-height: 1; }
 
-  /* NAV — desktop only */
+  /* NAV — visible on all sizes */
   .nav {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     display: flex; align-items: center; gap: 14px;
@@ -191,18 +175,17 @@
     border-radius: 100px; padding: 9px 18px;
     backdrop-filter: blur(12px); z-index: 100;
   }
-  @media (max-width: 768px) { .nav { display: none; } }
-  .nav-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 5px 14px; border-radius: 100px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
-  .nav-btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .nav-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 7px 18px; border-radius: 100px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .nav-btn:hover, .nav-btn:active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
   .nav-btn:disabled { opacity: 0.3; cursor: default; }
-  .nav-counter { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 55px; text-align: center; }
+  .nav-counter { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 45px; text-align: center; }
   .nav-dots { display: flex; gap: 5px; align-items: center; }
+  @media (max-width: 768px) { .nav-dots { display: none; } }
   .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
   .nav-dot.active { background: var(--accent); width: 14px; border-radius: 3px; }
 
-  /* Progress bar — desktop only */
+  /* Progress bar */
   .progress { position: fixed; top: 0; left: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.3s ease; z-index: 200; }
-  @media (max-width: 768px) { .progress { display: none; } }
 
   /* Slide badge + keyboard hint — desktop only */
   .kb-hint, .slide-badge { position: fixed; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; }
@@ -213,8 +196,8 @@
   /* Mobile header bar */
   .mobile-header {
     display: none;
-    position: sticky;
-    top: 0;
+    position: fixed;
+    top: 0; left: 0; right: 0;
     z-index: 50;
     background: rgba(7,13,18,0.95);
     backdrop-filter: blur(8px);
@@ -299,7 +282,7 @@
 <div class="slide slide-cover active">
   <div class="cover-eyebrow">Briefing · CCA Treasurers</div>
   <div class="cover-title">How to Submit<br>a Claim</div>
-  <div class="cover-sub">Two steps. Less than 5 minutes of your time.</div>
+  <div class="cover-sub">Two steps. Less than 10 minutes of your time.</div>
   <div style="display:flex;gap:24px;margin-top:24px;flex-wrap:wrap;justify-content:center;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
       <div style="width:48px;height:48px;border-radius:50%;background:rgba(0,201,167,0.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;">📱</div>
@@ -349,7 +332,7 @@
           <div><span style="color:var(--muted);">Portfolio:</span> Welfare</div>
           <div><span style="color:var(--muted);">CCA:</span> Welfare Comm</div>
           <div><span style="color:var(--muted);">Claim desc:</span> Welfare RHingo Claim</div>
-          <div><span style="color:var(--muted);">Others involved:</span> person1@u.nus.edu</div>
+          <div><span style="color:var(--muted);">Others involved:</span> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4e3e2b3c3d21207f0e3b60203b3d602b2a3b">[email&#160;protected]</a></div>
           <div><span style="color:var(--muted);">Remarks:</span> -</div>
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;">+ For each purchase: receipt photo <strong style="color:var(--text);">+</strong> bank transaction screenshot</div>
         </div>
@@ -407,8 +390,8 @@
         <div class="email-body">
           <p style="margin-bottom:6px;">Hi [First Name], we have received your claim. Please copy and paste everything below into a new email:</p>
           <div style="line-height:2;font-size:12px;margin:8px 0 4px;">
-            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">To: </span><span style="color:var(--accent2);">rh.finance@u.nus.edu</span></div>
-            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">CC: </span><span style="color:var(--accent2);">68findirector.rh@gmail.com, [others if any]</span></div>
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">To: </span><span style="color:var(--accent2);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3042581e56595e515e535570451e5e45431e555445">[email&#160;protected]</a></span></div>
+            <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">CC: </span><span style="color:var(--accent2);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fdcbc59b949399948f989e89928fd38f95bd9a909c9491d39e9290">[email&#160;protected]</a>, [others if any]</span></div>
             <div><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);">Subject: </span><span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;word-break:break-all;">2526-WELFARE-WELFARE COMM-001</span></div>
           </div>
           <div style="border-top:2px solid #1e2838;margin:8px 0 6px;"></div>
@@ -556,16 +539,14 @@
 
 <script>
   var slides, dotsEl, counter, progress, current, total;
-  var isDesktop = window.innerWidth >= 769;
 
   function goTo(n) {
-    if (!isDesktop) return;
     if (n < 0 || n >= total) return;
     slides[current].classList.remove('active');
-    dotsEl.children[current].classList.remove('active');
+    if (dotsEl.children[current]) dotsEl.children[current].classList.remove('active');
     current = n;
     slides[current].classList.add('active');
-    dotsEl.children[current].classList.add('active');
+    if (dotsEl.children[current]) dotsEl.children[current].classList.add('active');
     counter.textContent = (current + 1) + ' / ' + total;
     progress.style.width = ((current + 1) / total * 100) + '%';
     document.getElementById('prevBtn').disabled = current === 0;
@@ -579,43 +560,43 @@
     progress = document.getElementById('progress');
     current  = 0;
     total    = slides.length;
-    isDesktop = window.innerWidth >= 769;
 
     document.getElementById('prevBtn').addEventListener('click', function() { goTo(current - 1); });
     document.getElementById('nextBtn').addEventListener('click', function() { goTo(current + 1); });
 
-    if (isDesktop) {
-      slides.forEach(function(_, i) {
-        var d = document.createElement('div');
-        d.className = 'nav-dot' + (i === 0 ? ' active' : '');
-        d.onclick = function() { goTo(i); };
-        dotsEl.appendChild(d);
-      });
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
-        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
-        if (e.key === 'Home') goTo(0);
-        if (e.key === 'End')  goTo(total - 1);
-      });
-      var touchStartX = 0;
-      document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, { passive: true });
-      document.addEventListener('touchend', function(e) {
-        var diff = touchStartX - e.changedTouches[0].clientX;
-        if (Math.abs(diff) > 50) { diff > 0 ? goTo(current + 1) : goTo(current - 1); }
-      }, { passive: true });
-      goTo(0);
-    } else {
-      slides.forEach(function(s) {
-        s.classList.add('active');
-        s.style.opacity = '1';
-        s.style.transform = 'none';
-        s.style.pointerEvents = 'all';
-      });
-    }
-    window.addEventListener('resize', function() {
-      var nowDesktop = window.innerWidth >= 769;
-      if (nowDesktop !== isDesktop) { location.reload(); }
+    // Nav dots (desktop only — hidden on mobile via CSS)
+    slides.forEach(function(_, i) {
+      var d = document.createElement('div');
+      d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+      d.onclick = function() { goTo(i); };
+      dotsEl.appendChild(d);
     });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+      if (e.key === 'Home') goTo(0);
+      if (e.key === 'End')  goTo(total - 1);
+    });
+
+    // Touch swipe (works on all screen sizes)
+    var touchStartX = 0;
+    var touchStartY = 0;
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      var dx = touchStartX - e.changedTouches[0].clientX;
+      var dy = touchStartY - e.changedTouches[0].clientY;
+      // Only trigger if horizontal swipe is dominant
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+        dx > 0 ? goTo(current + 1) : goTo(current - 1);
+      }
+    }, { passive: true });
+
+    goTo(0);
   });
 </script>
 </body>
