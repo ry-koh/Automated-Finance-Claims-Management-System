@@ -233,12 +233,9 @@
   @media (max-width: 768px) {
     .mobile-header { display: block; }
     .slide {
-      padding: calc(var(--header-h, 52px) + 16px) 20px calc(var(--nav-h, 70px) + 12px);
+      padding: 80px 20px 90px;
       justify-content: flex-start;
       align-items: center;
-    }
-    .slide-cover {
-      justify-content: center;
     }
   }
 
@@ -566,6 +563,7 @@
       if (nav)    document.documentElement.style.setProperty('--nav-h',    nav.getBoundingClientRect().height    + 'px');
     }
     setHeightVars();
+    setTimeout(setHeightVars, 100);
     window.addEventListener('resize', setHeightVars);
 
     document.getElementById('prevBtn').addEventListener('click', function() { goTo(current - 1); });
