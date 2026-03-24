@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCA Treasurer Briefing — Claims Process</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070d12;
+    --surface: #0f1a20;
+    --surface2: #162028;
+    --border: #1e3040;
+    --accent: #00c9a7;
+    --accent2: #4f9cf9;
+    --accent3: #ff8c42;
+    --gold: #f7d060;
+    --red: #ff6b6b;
+    --text: #ddeef8;
+    --muted: #5a7a8a;
+    --tag-bg: rgba(0,201,167,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; padding: 52px 72px;
+    opacity: 0; pointer-events: none; transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+  /* COVER */
+  .slide-cover { background: radial-gradient(ellipse 80% 60% at 50% 40%, #061e2b 0%, var(--bg) 70%); text-align: center; gap: 14px; }
+  .cover-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+  .cover-title { font-family: 'Syne', sans-serif; font-size: clamp(36px, 5vw, 62px); font-weight: 800; line-height: 1.1; background: linear-gradient(135deg, #fff 20%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .cover-sub { font-size: 17px; color: var(--muted); font-weight: 300; }
+  .cover-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,201,167,0.1); border: 1px solid rgba(0,201,167,0.25); border-radius: 100px; padding: 6px 18px; font-size: 13px; color: var(--accent); margin-top: 20px; }
+  .cover-badge::before { content: '●'; font-size: 8px; }
+
+  /* DIVIDER */
+  .slide-divider { background: linear-gradient(135deg, #0d1c26 0%, var(--bg) 100%); text-align: center; gap: 10px; border-left: 4px solid var(--accent); }
+  .divider-num { font-family: 'DM Mono', monospace; font-size: 80px; font-weight: 300; color: var(--border); line-height: 1; }
+  .divider-label { font-family: 'Syne', sans-serif; font-size: clamp(28px, 3.5vw, 46px); font-weight: 700; }
+  .divider-desc { font-size: 15px; color: var(--muted); margin-top: 8px; max-width: 500px; }
+
+  /* CONTENT */
+  .slide-content { align-items: flex-start; gap: 20px; max-width: 980px; width: 100%; }
+  .slide-header { width: 100%; }
+  .slide-eyebrow { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+  .slide-title { font-family: 'Syne', sans-serif; font-size: clamp(22px, 2.8vw, 34px); font-weight: 700; line-height: 1.2; }
+  .slide-title span { color: var(--accent); }
+
+  /* CARDS */
+  .cards { display: grid; gap: 14px; width: 100%; }
+  .cards-2 { grid-template-columns: 1fr 1fr; }
+  .cards-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cards-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+  .card.blue::before { background: var(--accent2); }
+  .card.orange::before { background: var(--accent3); }
+  .card.gold::before { background: var(--gold); }
+  .card-icon { font-size: 20px; margin-bottom: 8px; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  .card-body { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* CALLOUT */
+  .callout { background: rgba(0,201,167,0.07); border: 1px solid rgba(0,201,167,0.2); border-radius: 10px; padding: 13px 18px; font-size: 12.5px; color: var(--text); line-height: 1.6; width: 100%; }
+  .callout.warn { background: rgba(255,107,107,0.07); border-color: rgba(255,107,107,0.2); }
+  .callout.blue { background: rgba(79,156,249,0.07); border-color: rgba(79,156,249,0.2); }
+  .callout.gold { background: rgba(247,208,96,0.07); border-color: rgba(247,208,96,0.2); }
+  .callout strong { color: var(--accent); }
+  .callout.warn strong { color: var(--red); }
+  .callout.blue strong { color: var(--accent2); }
+  .callout.gold strong { color: var(--gold); }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+  .step { display: flex; align-items: flex-start; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+  .step-num { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; color: var(--accent); background: var(--tag-bg); border: 1px solid rgba(0,201,167,0.2); border-radius: 6px; padding: 3px 8px; flex-shrink: 0; margin-top: 2px; }
+  .step-content { flex: 1; }
+  .step-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .step-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .step-desc strong { color: var(--text); }
+
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+  .col-block { display: flex; flex-direction: column; gap: 9px; }
+  .col-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+
+  /* MONO */
+  .mono { font-family: 'DM Mono', monospace; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; font-size: 11px; color: var(--gold); }
+
+  /* BULLETS */
+  ul.bullets { list-style: none; display: flex; flex-direction: column; gap: 7px; width: 100%; }
+  ul.bullets li { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+  ul.bullets li::before { content: '→'; color: var(--accent); flex-shrink: 0; font-family: 'DM Mono', monospace; font-size: 11px; margin-top: 2px; }
+  ul.bullets li strong { color: var(--text); font-weight: 500; }
+
+  /* BIG ROLE BADGE */
+  .role-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,201,167,0.1); border: 1px solid rgba(0,201,167,0.25); border-radius: 8px; padding: 8px 16px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); }
+  .role-badge.amber { background: rgba(247,208,96,0.1); border-color: rgba(247,208,96,0.25); color: var(--gold); }
+  .role-badge.blue { background: rgba(79,156,249,0.1); border-color: rgba(79,156,249,0.25); color: var(--accent2); }
+
+  /* NAV */
+  .nav { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(15,26,32,0.92); border: 1px solid var(--border); border-radius: 100px; padding: 9px 18px; backdrop-filter: blur(12px); z-index: 100; }
+  .nav-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 5px 14px; border-radius: 100px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .nav-btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-counter { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 55px; text-align: center; }
+  .nav-dots { display: flex; gap: 5px; align-items: center; }
+  .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
+  .nav-dot.active { background: var(--accent); width: 14px; border-radius: 3px; }
+  .progress { position: fixed; top: 0; left: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.3s ease; z-index: 200; }
+  .kb-hint { position: fixed; top: 18px; right: 22px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--border); letter-spacing: 1px; }
+  .slide-badge { position: fixed; top: 18px; left: 22px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="slide-badge">CCA TREASURER BRIEFING</div>
+<div class="kb-hint">← → ARROW KEYS</div>
+<div class="deck" id="deck">
+
+<!-- ══ 0: COVER ══════════════════════════════════════════════════════ -->
+<div class="slide slide-cover active">
+  <div class="cover-eyebrow">Briefing · CCA Treasurers</div>
+  <div class="cover-title">How to Submit<br>a Claim</div>
+  <div class="cover-sub">Your role is simple — 4 steps, and most of it is waiting</div>
+  <div class="cover-badge">Takes less than 10 minutes total</div>
+</div>
+
+<!-- ══ 1: YOUR ROLE ══════════════════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Overview</div>
+    <div class="slide-title">Your Role in the <span>Process</span></div>
+  </div>
+  <!-- Full flow diagram showing all parties -->
+  <div style="width:100%;">
+    <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="fl" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#00c9a7"/></marker>
+        <marker id="fl2" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#5a7a8a"/></marker>
+      </defs>
+      <!-- YOU blocks (bright) -->
+      <rect x="8"   y="28" width="148" height="68" rx="10" fill="#0a2820" stroke="#00c9a7" stroke-width="2"/>
+      <text x="82"  y="52" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7" letter-spacing="2">YOU</text>
+      <text x="82"  y="66" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#ddeef8" font-weight="700">① Send Telegram</text>
+      <text x="82"  y="80" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#5a7a8a">message your Liaison</text>
+      <rect x="14"  y="86" width="136" height="12" rx="4" fill="#061810"/>
+      <text x="82"  y="95" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#00c9a7">&lt; 5 min</text>
+
+      <!-- arrow + wait -->
+      <line x1="158" y1="62" x2="186" y2="62" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#fl2)" stroke-dasharray="4,3"/>
+      <!-- Finance Team block (muted) -->
+      <rect x="188" y="28" width="200" height="68" rx="10" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="288" y="52" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#5a7a8a" letter-spacing="2">FINANCE TEAM</text>
+      <text x="288" y="66" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#5a7a8a" font-weight="700">Process &amp; Generate</text>
+      <text x="288" y="80" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#3a5060">fills form, generates docs</text>
+      <rect x="194" y="86" width="188" height="12" rx="4" fill="#0a1218"/>
+      <text x="288" y="95" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">handled by them</text>
+
+      <!-- arrow -->
+      <line x1="390" y1="62" x2="418" y2="62" stroke="#00c9a7" stroke-width="1.5" marker-end="url(#fl)"/>
+
+      <!-- YOU block 2 (bright) -->
+      <rect x="420" y="28" width="168" height="68" rx="10" fill="#0a2820" stroke="#00c9a7" stroke-width="2"/>
+      <text x="504" y="52" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7" letter-spacing="2">YOU</text>
+      <text x="504" y="66" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#ddeef8" font-weight="700">② Send Email</text>
+      <text x="504" y="80" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#5a7a8a">new email, copy-paste, attach, send</text>
+      <rect x="426" y="86" width="156" height="12" rx="4" fill="#061810"/>
+      <text x="504" y="95" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#00c9a7">&lt; 5 min</text>
+
+      <!-- arrow + wait -->
+      <line x1="590" y1="62" x2="618" y2="62" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#fl2)" stroke-dasharray="4,3"/>
+
+      <!-- Finance Office + Finance Team block (muted) -->
+      <rect x="620" y="28" width="232" height="68" rx="10" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="736" y="52" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#5a7a8a" letter-spacing="2">FINANCE TEAM + OFFICE</text>
+      <text x="736" y="66" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#5a7a8a" font-weight="700">Compile &amp; Submit</text>
+      <text x="736" y="80" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#3a5060">PDF compiled, submitted to Finance Office</text>
+      <rect x="626" y="86" width="220" height="12" rx="4" fill="#0a1218"/>
+      <text x="736" y="95" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">handled by them</text>
+
+      <!-- bottom labels -->
+      <text x="82"  y="118" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">YOUR STEP</text>
+      <text x="288" y="118" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">NOT YOUR JOB</text>
+      <text x="504" y="118" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">YOUR STEP</text>
+      <text x="736" y="118" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">NOT YOUR JOB</text>
+
+      <!-- wait labels on arrows -->
+      <text x="172" y="55" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">wait</text>
+      <text x="604" y="55" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">wait</text>
+
+      <!-- bottom note -->
+      <text x="430" y="136" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#3a5060">Your total active effort: &lt; 10 minutes. The rest is waiting for Finance Team to do their part.</text>
+    </svg>
+  </div>
+  <div class="callout" style="font-size:13px;">
+    <strong>Your job is just two actions:</strong> send a Telegram message with your claim details, then send a new email when you receive instructions from Finance Team. Finance Team handles everything in between.
+  </div>
+</div>
+
+<!-- ══ 2: SECTION 1 ══════════════════════════════════════════════════ -->
+<div class="slide slide-divider">
+  <div class="divider-num">01</div>
+  <div class="divider-label">Send a Telegram</div>
+  <div class="divider-desc">Your first and main task</div>
+</div>
+
+<!-- ══ 3: WHAT TO SEND ══════════════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Step 1 — Telegram</div>
+    <div class="slide-title">What to <span>Send Your Liaison</span></div>
+  </div>
+  <div class="two-col">
+    <div class="col-block">
+      <!-- Telegram message mockup -->
+      <div style="background:#0d1a22; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+        <!-- TG header -->
+        <div style="background:#0f2030; padding:10px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border);">
+          <div style="width:30px;height:30px;border-radius:50%;background:rgba(0,201,167,0.2);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;">💬</div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);">YOUR LIAISON</div>
+            <div style="font-size:10px;color:var(--muted);">Finance Team Member</div>
+          </div>
+        </div>
+        <!-- message bubble -->
+        <div style="padding:14px 14px 8px;">
+          <div style="background:#0a2820;border:1px solid rgba(0,201,167,0.2);border-radius:10px 10px 10px 2px;padding:12px 14px;font-size:12px;line-height:1.8;color:var(--text);">
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--accent);margin-bottom:8px;letter-spacing:1px;">MESSAGE TEMPLATE</div>
+            <div><span style="color:var(--muted);">Portfolio:</span> Welfare</div>
+            <div><span style="color:var(--muted);">CCA:</span> Welfare Comm</div>
+            <div><span style="color:var(--muted);">Claim desc:</span> Welfare RHingo Claim</div>
+            <div><span style="color:var(--muted);">Others involved:</span> person1@u.nus.edu</div>
+            <div><span style="color:var(--muted);">Remarks:</span> -</div>
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;">+ Screenshots of all receipts &amp; bank transactions</div>
+          </div>
+          <div style="text-align:right;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:4px;padding-bottom:6px;">sent ✓✓</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-block">
+      <div class="col-label">What each field means</div>
+      <div class="steps" style="gap:8px;">
+        <div class="step">
+          <div class="step-num">Portfolio</div>
+          <div class="step-content"><div class="step-desc">Your CCA's portfolio group (e.g. Sports, Culture, Welfare). <strong>Skip if your Liaison already knows.</strong></div></div>
+        </div>
+        <div class="step">
+          <div class="step-num">CCA</div>
+          <div class="step-content"><div class="step-desc">Your CCA's name. <strong>Skip if your Liaison already knows.</strong></div></div>
+        </div>
+        <div class="step">
+          <div class="step-num">Claim Desc</div>
+          <div class="step-content"><div class="step-desc">Brief name of the event or purchase. E.g. <em>"Disc Claim"</em> or <em>"Welfare RHingo Claim"</em>.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-num">Others</div>
+          <div class="step-content"><div class="step-desc">Emails of others involved in the claim. Leave blank if none.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-num">Receipts</div>
+          <div class="step-content"><div class="step-desc">For each receipt, send the matching bank transaction screenshot <strong>together</strong>. Don't send all files in a pile — your Liaison needs to know which bank screenshot belongs to which receipt.</div></div>
+        </div>
+      </div>
+      <div class="callout" style="font-size:12px;">
+        <strong>No receipt limit.</strong> Previously you could only send 5 per email. Now send everything for an entire event in one Telegram message.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 4: RECEIPTS ══════════════════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Step 1 — Telegram</div>
+    <div class="slide-title">What to Attach — <span>Receipts &amp; Screenshots</span></div>
+  </div>
+  <div class="cards cards-2" style="margin-bottom:10px;">
+    <div class="card">
+      <div class="card-icon">🧾</div>
+      <div class="card-title">Receipt / Invoice</div>
+      <div class="card-body">Photo or screenshot of the physical receipt or invoice from the merchant. <strong style="color:var(--text);">Required for every purchase.</strong></div>
+    </div>
+      <div class="card blue">
+        <div class="card-icon">🏦</div>
+        <div class="card-title">Bank Transaction Screenshot</div>
+        <div class="card-body">A screenshot of the transaction record from your bank app or PayNow confirming payment was made. <strong style="color:var(--text);">Must match the receipt it belongs to.</strong></div>
+      </div>
+  </div>
+  <!-- diagram showing pair per receipt -->
+  <div style="width:100%;">
+    <svg viewBox="0 0 760 88" xmlns="http://www.w3.org/2000/svg">
+      <text x="380" y="14" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#3a5060" letter-spacing="2">FOR EACH PURCHASE — SEND BOTH:</text>
+      <!-- pair 1 -->
+      <rect x="8"   y="24" width="148" height="38" rx="8" fill="#13151c" stroke="#00c9a7" stroke-width="1.5"/>
+      <text x="82"  y="41" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#00c9a7">🧾 Receipt #1</text>
+      <text x="82"  y="55" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">photo of receipt</text>
+      <rect x="162" y="24" width="148" height="38" rx="8" fill="#13151c" stroke="#4f9cf9" stroke-width="1.5"/>
+      <text x="236" y="41" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#4f9cf9">🏦 Bank #1</text>
+      <text x="236" y="55" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">transaction screenshot</text>
+      <text x="155" y="46" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#1e3040">+</text>
+      <!-- bracket -->
+      <rect x="314" y="38" width="30" height="2" rx="1" fill="#1e3040"/>
+      <text x="316" y="54" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">×N</text>
+
+      <!-- pair 2 -->
+      <rect x="350" y="24" width="148" height="38" rx="8" fill="#13151c" stroke="#00c9a7" stroke-width="1.5"/>
+      <text x="424" y="41" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#00c9a7">🧾 Receipt #2</text>
+      <text x="424" y="55" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">photo of receipt</text>
+      <rect x="504" y="24" width="148" height="38" rx="8" fill="#13151c" stroke="#4f9cf9" stroke-width="1.5"/>
+      <text x="578" y="41" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#4f9cf9">🏦 Bank #2</text>
+      <text x="578" y="55" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">transaction screenshot</text>
+      <text x="497" y="46" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#1e3040">+</text>
+
+      <text x="662" y="43" text-anchor="middle" font-family="DM Mono,monospace" font-size="12" fill="#1e3040">···</text>
+    </svg>
+  </div>
+  <div class="callout warn" style="font-size:12px;">
+    <strong>Missing a bank screenshot?</strong> Finance Team won't be able to process the claim. Make sure every receipt has a matching bank transaction photo.
+  </div>
+</div>
+
+<!-- ══ 5: SECTION 2 ══════════════════════════════════════════════════ -->
+<div class="slide slide-divider">
+  <div class="divider-num">02</div>
+  <div class="divider-label">Wait &amp; Watch</div>
+  <div class="divider-desc">Finance Team handles things from here</div>
+</div>
+
+<!-- ══ 6: WHAT HAPPENS WHILE YOU WAIT ═══════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Step 2 — Wait</div>
+    <div class="slide-title">What Finance Team <span>Does After You Send</span></div>
+  </div>
+  <div style="width:100%;">
+    <svg viewBox="0 0 860 170" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="wt" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#5a7a8a"/></marker>
+      </defs>
+      <!-- Step labels top -->
+      <text x="80"  y="14" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">LIAISON</text>
+      <text x="260" y="14" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">LIAISON</text>
+      <text x="460" y="14" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">CLAIMS HANDLER</text>
+      <text x="660" y="14" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">CLAIMS HANDLER</text>
+      <!-- boxes -->
+      <rect x="8"   y="22" width="144" height="68" rx="10" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="80"  y="44" text-anchor="middle" font-family="Syne,sans-serif" font-size="10.5" fill="#ddeef8" font-weight="700">Liaison checks</text>
+      <text x="80"  y="58" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">Reviews your info,</text>
+      <text x="80"  y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">asks if anything</text>
+      <text x="80"  y="82" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">is unclear</text>
+
+      <line x1="154" y1="56" x2="178" y2="56" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#wt)"/>
+
+      <rect x="180" y="22" width="160" height="68" rx="10" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="260" y="44" text-anchor="middle" font-family="Syne,sans-serif" font-size="10.5" fill="#ddeef8" font-weight="700">Fills Google Form</text>
+      <text x="260" y="58" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">Submits the form</text>
+      <text x="260" y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">on your behalf —</text>
+      <text x="260" y="82" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">you don't touch it</text>
+
+      <line x1="342" y1="56" x2="366" y2="56" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#wt)"/>
+
+      <!-- parallel block -->
+      <rect x="368" y="16" width="360" height="80" rx="10" fill="#0c1810" stroke="#f7d060" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="548" y="14" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#f7d060">AT THE SAME TIME</text>
+
+      <rect x="376" y="24" width="160" height="64" rx="8" fill="#0f1a20" stroke="#1e3040" stroke-width="1"/>
+      <text x="456" y="44" text-anchor="middle" font-family="Syne,sans-serif" font-size="10" fill="#ddeef8" font-weight="700">Sends you email</text>
+      <text x="456" y="58" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">Auto-generated email</text>
+      <text x="456" y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">with instructions</text>
+      <text x="456" y="80" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#00c9a7">→ goes to YOUR inbox</text>
+
+      <rect x="548" y="24" width="172" height="64" rx="8" fill="#0f1a20" stroke="#1e3040" stroke-width="1"/>
+      <text x="634" y="44" text-anchor="middle" font-family="Syne,sans-serif" font-size="10" fill="#ddeef8" font-weight="700">Processes claim</text>
+      <text x="634" y="58" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">Prepares all documents</text>
+      <text x="634" y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">on your behalf</text>
+      <text x="634" y="80" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">→ nothing to do on your end</text>
+
+      <!-- "waiting for you" label -->
+      <rect x="754" y="30" width="98" height="50" rx="8" fill="#161000" stroke="#f7d060" stroke-width="1.5"/>
+      <text x="803" y="50" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#f7d060">⏳ ON HOLD</text>
+      <text x="803" y="64" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#5a7a8a">until you</text>
+      <text x="803" y="75" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#5a7a8a">send the email</text>
+
+      <!-- YOUR INBOX marker — sits below the parallel block -->
+      <line x1="456" y1="88" x2="456" y2="110" stroke="#00c9a7" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <rect x="390" y="110" width="132" height="18" rx="5" fill="#061810" stroke="#00c9a7" stroke-width="1"/>
+      <text x="456" y="123" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">→ CHECK YOUR EMAIL</text>
+
+      <!-- bottom note below the box -->
+      <text x="430" y="148" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#3a5060">You receive an email to your inbox. This is your cue to act. Check for it after sending your Telegram message.</text>
+    </svg>
+  </div>
+  <div class="callout blue" style="font-size:12px;">
+    <strong>You will receive an email</strong> from Finance Team. The subject line will be your claim's reference code (e.g. <span style="font-family:'DM Mono',monospace;color:var(--gold);">2526-WELFARE-WELFARE COMM-001</span>). This is your next cue.
+  </div>
+</div>
+
+<!-- ══ 7: SECTION 3 ══════════════════════════════════════════════════ -->
+<div class="slide slide-divider">
+  <div class="divider-num">03</div>
+  <div class="divider-label">Send the Email</div>
+  <div class="divider-desc">Your second and final active task</div>
+</div>
+
+<!-- ══ 8: THE EMAIL ══════════════════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Step 3 — Send Email</div>
+    <div class="slide-title">The Email You <span>Receive &amp; Act On</span></div>
+  </div>
+  <div style="display:flex;gap:20px;width:100%;align-items:flex-start;">
+    <!-- email mockup -->
+    <div style="flex:1;">
+      <svg viewBox="0 0 410 260" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="410" height="260" rx="10" fill="#0d1420" stroke="#1e3040" stroke-width="1.5"/>
+        <!-- header bar -->
+        <rect x="0" y="0" width="410" height="30" rx="10" fill="#0f1a20"/>
+        <rect x="0" y="20" width="410" height="10" fill="#0f1a20"/>
+        <circle cx="14" cy="15" r="5" fill="#ff6b6b" opacity="0.4"/>
+        <circle cx="28" cy="15" r="5" fill="#f7d060" opacity="0.4"/>
+        <circle cx="42" cy="15" r="5" fill="#00c9a7" opacity="0.4"/>
+        <text x="205" y="19" text-anchor="middle" font-family="DM Mono,monospace" font-size="8.5" fill="#3a5060">Gmail — Inbox</text>
+        <!-- From -->
+        <text x="12" y="46" font-family="DM Mono,monospace" font-size="8.5" fill="#3a5060">From:</text>
+        <text x="52" y="46" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">Finance Team Member</text>
+        <!-- Subject -->
+        <text x="12" y="60" font-family="DM Mono,monospace" font-size="8.5" fill="#3a5060">Subject:</text>
+        <text x="62" y="60" font-family="DM Mono,monospace" font-size="9" fill="#f7d060">2526-WELFARE-WELFARE COMM-001</text>
+        <line x1="8" y1="65" x2="402" y2="65" stroke="#1e3040" stroke-width="1"/>
+        <!-- greeting -->
+        <text x="12" y="80" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">Hi [First Name],</text>
+        <text x="12" y="93" font-family="DM Sans,sans-serif" font-size="8" fill="#5a7a8a">We have received your claim. After sending the email below, this confirms your claim is being processed.</text>
+        <text x="12" y="106" font-family="DM Sans,sans-serif" font-size="8" fill="#5a7a8a">Please copy and paste everything below the line into a new email:</text>
+        <!-- copy box -->
+        <rect x="8" y="112" width="394" height="100" rx="6" fill="#061014" stroke="#1e3040" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- copy box label -->
+        <rect x="16" y="108" width="96" height="12" rx="3" fill="#0a2820"/>
+        <text x="64" y="117" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" fill="#00c9a7">COPY THIS SECTION</text>
+        <text x="14" y="129" font-family="DM Mono,monospace" font-size="7.5" fill="#4f9cf9">To: rh.finance@u.nus.edu</text>
+        <text x="14" y="141" font-family="DM Mono,monospace" font-size="7.5" fill="#4f9cf9">CC: 68findirector.rh@gmail.com, [others if any]</text>
+        <text x="14" y="153" font-family="DM Mono,monospace" font-size="7.5" fill="#f7d060">Subject: 2526-WELFARE-WELFARE COMM-001</text>
+        <line x1="8" y1="159" x2="402" y2="159" stroke="#1e2838" stroke-width="1"/>
+        <text x="14" y="172" font-family="DM Sans,sans-serif" font-size="7.5" fill="#5a7a8a">Dear Jun Kiat, attached is the claims for Disc Claim.</text>
+        <text x="14" y="184" font-family="DM Sans,sans-serif" font-size="7.5" fill="#5a7a8a">I, [YOUR FULL NAME], [MATRIC], hereby authorise Jun Kiat to collect</text>
+        <text x="14" y="196" font-family="DM Sans,sans-serif" font-size="7.5" fill="#5a7a8a">reimbursement on my behalf.  |  PayNow: 9XXX XXXX  |  Total: $XX.XX</text>
+        <text x="205" y="224" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="#3a5060">Your receipts are already attached to the Finance Team email you received</text>
+      </svg>
+    </div>
+    <div style="flex:0 0 268px;display:flex;flex-direction:column;gap:10px;">
+      <div class="col-label">What you need to do</div>
+      <div class="steps" style="gap:8px;">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content"><div class="step-title">Create a NEW email</div><div class="step-desc">Do not reply to the Finance Team email. Open a fresh compose window.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content"><div class="step-title">Copy the To, CC, Subject</div><div class="step-desc">Use the exact To, CC, and Subject shown in the dotted box. Don't change the subject line.</div></div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content"><div class="step-title">Paste the body &amp; send</div><div class="step-desc">Copy everything below the line in the dotted box, paste as your email body, then send.</div></div>
+        </div>
+      </div>
+      <div class="callout warn" style="font-size:11.5px;">
+        <strong>Do not reply</strong> to the Finance Team email — you must create a brand new email addressed to the Finance Director.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 9: REFERENCE CODE ════════════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Step 3 — Forward Email</div>
+    <div class="slide-title">Your <span>Reference Code</span> — Keep It Handy</div>
+  </div>
+  <div style="width:100%;margin-bottom:8px;">
+    <svg viewBox="0 0 760 106" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="8" width="744" height="44" rx="10" fill="#061014" stroke="#4f9cf9" stroke-width="1.5"/>
+      <rect x="18" y="16" width="130" height="28" rx="6" fill="rgba(79,156,249,0.15)" stroke="rgba(79,156,249,0.3)" stroke-width="1"/>
+      <text x="83" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="16" fill="#fff" font-weight="500">2526</text>
+      <text x="152" y="34" font-family="DM Mono,monospace" font-size="16" fill="#1e3040">—</text>
+      <rect x="165" y="16" width="168" height="28" rx="6" fill="rgba(0,201,167,0.12)" stroke="rgba(0,201,167,0.3)" stroke-width="1"/>
+      <text x="249" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="16" fill="#fff" font-weight="500">WELFARE</text>
+      <text x="337" y="34" font-family="DM Mono,monospace" font-size="16" fill="#1e3040">—</text>
+      <rect x="350" y="16" width="280" height="28" rx="6" fill="rgba(247,208,96,0.1)" stroke="rgba(247,208,96,0.3)" stroke-width="1"/>
+      <text x="490" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="16" fill="#fff" font-weight="500">WELFARE COMM</text>
+      <text x="634" y="34" font-family="DM Mono,monospace" font-size="16" fill="#1e3040">—</text>
+      <rect x="648" y="16" width="96" height="28" rx="6" fill="rgba(255,107,107,0.12)" stroke="rgba(255,107,107,0.3)" stroke-width="1"/>
+      <text x="696" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="16" fill="#fff" font-weight="500">001</text>
+      <!-- labels -->
+      <line x1="83"  y1="44" x2="83"  y2="62" stroke="#4f9cf9" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="249" y1="44" x2="249" y2="62" stroke="#00c9a7" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="490" y1="44" x2="490" y2="62" stroke="#f7d060" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="696" y1="44" x2="696" y2="62" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="83"  y="72" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#4f9cf9">Academic Year</text>
+      <text x="249" y="72" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#00c9a7">Portfolio</text>
+      <text x="490" y="72" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#f7d060">CCA Name</text>
+      <text x="696" y="72" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#ff6b6b">Claim No.</text>
+      <text x="380" y="96" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#3a5060">This is your claim's unique ID — it's the email subject and how Finance Team tracks your claim</text>
+    </svg>
+  </div>
+  <div class="callout blue" style="font-size:12.5px; margin-bottom:8px;">
+    <strong>Use this code</strong> when following up with Finance Team about your claim status. It will also appear as the subject of the Finance Team email you receive.
+  </div>
+  <div class="callout" style="font-size:12.5px;">
+    <strong>Do not change the subject line</strong> when sending to the Finance Director — keep it exactly as given. This is how the claim is tracked.
+  </div>
+</div>
+
+<!-- ══ 10: SECTION 4 ═════════════════════════════════════════════════ -->
+<div class="slide slide-divider">
+  <div class="divider-num">04</div>
+  <div class="divider-label">Wait for Reimbursement</div>
+  <div class="divider-desc">Finance Team wraps up and you get paid</div>
+</div>
+
+<!-- ══ 11: AFTER YOU SEND ════════════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Step 4 — Wait</div>
+    <div class="slide-title">What Happens <span>After You Send</span></div>
+  </div>
+  <div style="width:100%;margin-bottom:12px;">
+    <svg viewBox="0 0 860 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="af" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#5a7a8a"/></marker>
+        <marker id="af2" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#00c9a7"/></marker>
+      </defs>
+      <!-- YOU sent -->
+      <rect x="8" y="20" width="110" height="50" rx="8" fill="#0a2820" stroke="#00c9a7" stroke-width="2"/>
+      <text x="63" y="38" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">YOU</text>
+      <text x="63" y="51" text-anchor="middle" font-family="Syne,sans-serif" font-size="9.5" fill="#ddeef8" font-weight="700">Email sent ✓</text>
+      <text x="63" y="63" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#5a7a8a">to Finance Director</text>
+      <line x1="120" y1="45" x2="140" y2="45" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#af)"/>
+      <!-- Finance Team compiles -->
+      <rect x="142" y="20" width="130" height="50" rx="8" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="207" y="35" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">FINANCE TEAM</text>
+      <text x="207" y="49" text-anchor="middle" font-family="Syne,sans-serif" font-size="9.5" fill="#5a7a8a" font-weight="700">Compiles PDF</text>
+      <text x="207" y="62" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#3a5060">adds screenshot, merges docs</text>
+      <line x1="274" y1="45" x2="294" y2="45" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#af)"/>
+      <!-- Finance Office -->
+      <rect x="296" y="20" width="126" height="50" rx="8" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="359" y="35" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">FINANCE OFFICE</text>
+      <text x="359" y="49" text-anchor="middle" font-family="Syne,sans-serif" font-size="9.5" fill="#5a7a8a" font-weight="700">Submits to NUS</text>
+      <text x="359" y="62" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#3a5060">sends PDF to NUS OFN</text>
+      <line x1="424" y1="45" x2="444" y2="45" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#af)"/>
+      <!-- NUS OFN -->
+      <rect x="446" y="20" width="118" height="50" rx="8" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="505" y="35" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">NUS OFN</text>
+      <text x="505" y="49" text-anchor="middle" font-family="Syne,sans-serif" font-size="9.5" fill="#5a7a8a" font-weight="700">Approves claim</text>
+      <text x="505" y="62" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#3a5060">reimburses Finance Director</text>
+      <line x1="566" y1="45" x2="586" y2="45" stroke="#5a7a8a" stroke-width="1.5" marker-end="url(#af)"/>
+      <!-- Finance Director -->
+      <rect x="588" y="20" width="130" height="50" rx="8" fill="#0f1a20" stroke="#1e3040" stroke-width="1.5"/>
+      <text x="653" y="35" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">FINANCE DIRECTOR</text>
+      <text x="653" y="49" text-anchor="middle" font-family="Syne,sans-serif" font-size="9.5" fill="#5a7a8a" font-weight="700">Pays you back</text>
+      <text x="653" y="62" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#3a5060">reimburses you via PayNow</text>
+      <line x1="720" y1="45" x2="740" y2="45" stroke="#00c9a7" stroke-width="1.5" marker-end="url(#af2)"/>
+      <!-- PayNow -->
+      <rect x="742" y="20" width="110" height="50" rx="8" fill="#0a2820" stroke="#00c9a7" stroke-width="2"/>
+      <text x="797" y="35" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">YOU GET PAID</text>
+      <text x="797" y="49" text-anchor="middle" font-family="Syne,sans-serif" font-size="9.5" fill="#ddeef8" font-weight="700">💸 PayNow</text>
+      <text x="797" y="62" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="#5a7a8a">to your phone number</text>
+      <text x="430" y="90" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#3a5060">This full chain takes at least a month — it involves NUS systems outside Finance Team's control</text>
+    </svg>
+  </div>
+  <div class="cards cards-3">
+    <div class="card">
+      <div class="card-icon">📸</div>
+      <div class="card-title">Screenshot added &amp; compiled</div>
+      <div class="card-body">Finance Team screenshots your sent email, adds it to your documents, and compiles everything into one PDF.</div>
+    </div>
+    <div class="card blue">
+      <div class="card-icon">🏛️</div>
+      <div class="card-title">NUS OFN approval</div>
+      <div class="card-body">Finance Office submits the PDF to NUS Office of Finance (OFN). Once NUS approves, they reimburse the Finance Director.</div>
+    </div>
+    <div class="card gold">
+      <div class="card-icon">💸</div>
+      <div class="card-title">Finance Director pays you</div>
+      <div class="card-body">After the Finance Director receives the reimbursement from NUS, they pay you back via PayNow.</div>
+    </div>
+  </div>
+  <div class="callout warn" style="font-size:12px; margin-top:4px;">
+    <strong>Expect at least a month.</strong> The process goes through NUS OFN which is outside Finance Team's control. Follow up with your Liaison using your Reference Code if it's been unusually long.
+  </div>
+</div>
+
+<!-- ══ 12: SUMMARY CHEAT SHEET ═══════════════════════════════════════ -->
+<div class="slide slide-content">
+  <div class="slide-header">
+    <div class="slide-eyebrow">Quick Reference</div>
+    <div class="slide-title">Your <span>Cheat Sheet</span></div>
+  </div>
+  <div style="width:100%;">
+    <svg viewBox="0 0 860 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="cs" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#00c9a7"/></marker>
+        <marker id="cs2" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto"><path d="M0,0 L0,5 L7,2.5 z" fill="#1e3040"/></marker>
+      </defs>
+      <!-- Step 1 YOU -->
+      <rect x="8" y="16" width="178" height="110" rx="10" fill="#0a2820" stroke="#00c9a7" stroke-width="2"/>
+      <rect x="8" y="16" width="178" height="28" rx="10" fill="#061810"/>
+      <rect x="8" y="36" width="178" height="8" fill="#061810"/>
+      <text x="97" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#00c9a7" letter-spacing="2">STEP 1 — YOU</text>
+      <text x="97" y="54" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#ddeef8" font-weight="700">📱 Telegram message</text>
+      <text x="18" y="71" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Portfolio + CCA (if needed)</text>
+      <text x="18" y="84" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Claim description</text>
+      <text x="18" y="97" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Others involved (emails)</text>
+      <text x="18" y="110" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• All receipts + bank screenshots</text>
+      <rect x="16" y="116" width="162" height="12" rx="4" fill="#061810"/>
+      <text x="97" y="125" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">&lt; 5 minutes active effort</text>
+
+      <!-- wait arrow -->
+      <line x1="188" y1="71" x2="216" y2="71" stroke="#1e3040" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#cs2)"/>
+      <text x="202" y="65" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">wait</text>
+
+      <!-- Finance team handles -->
+      <rect x="218" y="16" width="200" height="110" rx="10" fill="#0c1218" stroke="#1e3040" stroke-width="1.5"/>
+      <rect x="218" y="16" width="200" height="28" rx="10" fill="#0a1018"/>
+      <rect x="218" y="36" width="200" height="8" fill="#0a1018"/>
+      <text x="318" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#3a5060" letter-spacing="1">FINANCE TEAM</text>
+      <text x="318" y="54" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#5a7a8a" font-weight="700">⚙️ Does everything</text>
+      <text x="228" y="71" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• Liaison checks &amp; fills form</text>
+      <text x="228" y="84" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• Processes your claim</text>
+      <text x="228" y="97" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• Sends you email instructions</text>
+      <text x="228" y="110" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• Not your job</text>
+      <rect x="226" y="116" width="184" height="12" rx="4" fill="#0a1018"/>
+      <text x="318" y="125" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">you just wait</text>
+
+      <!-- arrow -->
+      <line x1="420" y1="71" x2="448" y2="71" stroke="#00c9a7" stroke-width="1.5" marker-end="url(#cs)"/>
+      <text x="434" y="65" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#5a7a8a">email</text>
+
+      <!-- Step 3 YOU -->
+      <rect x="450" y="16" width="196" height="110" rx="10" fill="#0a2820" stroke="#00c9a7" stroke-width="2"/>
+      <rect x="450" y="16" width="196" height="28" rx="10" fill="#061810"/>
+      <rect x="450" y="36" width="196" height="8" fill="#061810"/>
+      <text x="548" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#00c9a7" letter-spacing="2">STEP 3 — YOU</text>
+      <text x="548" y="54" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#ddeef8" font-weight="700">✉️ Send new email</text>
+      <text x="460" y="71" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Create NEW email (don't reply)</text>
+      <text x="460" y="84" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Copy To / CC / Subject exactly</text>
+      <text x="460" y="97" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Paste body, re-attach all files</text>
+      <text x="460" y="110" font-family="DM Sans,sans-serif" font-size="8.5" fill="#5a7a8a">• Send to Finance Director</text>
+      <rect x="458" y="116" width="180" height="12" rx="4" fill="#061810"/>
+      <text x="548" y="125" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#00c9a7">&lt; 5 minutes active effort</text>
+
+      <!-- wait arrow -->
+      <line x1="648" y1="71" x2="676" y2="71" stroke="#1e3040" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#cs2)"/>
+      <text x="662" y="65" text-anchor="middle" font-family="DM Mono,monospace" font-size="7.5" fill="#3a5060">wait</text>
+
+      <!-- Reimbursement -->
+      <rect x="678" y="16" width="174" height="110" rx="10" fill="#0c1218" stroke="#1e3040" stroke-width="1.5"/>
+      <rect x="678" y="16" width="174" height="28" rx="10" fill="#0a1018"/>
+      <rect x="678" y="36" width="174" height="8" fill="#0a1018"/>
+      <text x="765" y="34" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#f7d060" letter-spacing="1">STEP 4 — WAIT</text>
+      <text x="765" y="54" text-anchor="middle" font-family="Syne,sans-serif" font-size="11" fill="#5a7a8a" font-weight="700">💸 Get reimbursed</text>
+      <text x="686" y="71" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• Finance Team compiles PDF</text>
+      <text x="686" y="84" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• Finance Office → NUS OFN</text>
+      <text x="686" y="97" font-family="DM Sans,sans-serif" font-size="8.5" fill="#3a5060">• NUS pays Finance Director</text>
+      <text x="686" y="110" font-family="DM Sans,sans-serif" font-size="8.5" fill="#f7d060">• Finance Director pays you</text>
+      <rect x="686" y="116" width="158" height="12" rx="4" fill="#0a1018"/>
+      <text x="765" y="125" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#3a5060">at least 1 month</text>
+
+      <!-- bottom summary -->
+      <text x="430" y="152" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="10" fill="#5a7a8a">Your total active effort: &lt; 10 minutes.   Your Liaison is your point of contact for any questions.</text>
+      <text x="430" y="168" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#3a5060">Reimbursement takes at least a month — it goes through NUS OFN before Finance Director pays you</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══ 13: END ════════════════════════════════════════════════════════ -->
+<div class="slide slide-cover" style="gap:20px;">
+  <div class="cover-eyebrow">That's it!</div>
+  <div class="cover-title" style="font-size:clamp(28px,4vw,52px);">Ready?</div>
+  <div class="cover-sub">Message your Liaison on Telegram to get started<br>They'll walk you through anything you're unsure about</div>
+  <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;justify-content:center;">
+    <div class="cover-badge">📱 Telegram your Liaison</div>
+    <div class="cover-badge">⏳ Wait for your email</div>
+    <div class="cover-badge">✉️ Send to Finance Director</div>
+    <div class="cover-badge">💸 Get reimbursed</div>
+  </div>
+  <div style="margin-top:20px;font-size:13px;color:var(--muted);">Questions? Contact your Liaison or Finance Director directly</div>
+</div>
+
+</div><!-- end deck -->
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="goTo(current-1)">← Prev</button>
+  <div class="nav-dots" id="dots"></div>
+  <div class="nav-counter" id="counter">1 / 14</div>
+  <button class="nav-btn" id="nextBtn" onclick="goTo(current+1)">Next →</button>
+</div>
+
+<script>
+  var slides, dotsEl, counter, progress, current, total;
+
+  function goTo(n) {
+    if (n < 0 || n >= total) return;
+    slides[current].classList.remove('active');
+    dotsEl.children[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    dotsEl.children[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + total;
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    slides   = document.querySelectorAll('.slide');
+    dotsEl   = document.getElementById('dots');
+    counter  = document.getElementById('counter');
+    progress = document.getElementById('progress');
+    current  = 0;
+    total    = slides.length;
+
+    slides.forEach(function(_, i) {
+      var d = document.createElement('div');
+      d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+      d.onclick = function() { goTo(i); };
+      dotsEl.appendChild(d);
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+      if (e.key === 'Home') goTo(0);
+      if (e.key === 'End')  goTo(total - 1);
+    });
+
+    goTo(0);
+  });
+</script>
